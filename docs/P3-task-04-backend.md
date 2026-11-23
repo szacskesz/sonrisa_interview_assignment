@@ -26,9 +26,13 @@ Set `DEMO_ADMIN_PASSWORD` and `DEMO_USER_PASSWORD` to local demo secrets of 12 t
 
 Run `pnpm --dir backend fake-rss` in a separate terminal. By default it serves `http://127.0.0.1:18080/rss.xml`. Set `FAKE_RSS_PORT` to change the port. The base URL returns the latest UTC minute headline, such as `News 2026-11-23T09:02:00.000Z`. Supplying both `after` and `through` as UTC minute timestamps returns up to 100 items in publication order. The lower bound is exclusive and the upper bound is inclusive.
 
-The RSS adapter exposes `latest()` for the publication timestamp or an empty snapshot, and `page(after, through)` for normalized articles containing an ID, title, optional URL, and publication timestamp. The adapter rejects failed requests, redirects, malformed documents, and incomplete or unordered fixture pages. It has no access to subscriptions or delivery channels.
+The fake RSS adapter exposes `latest()` and `page(after, through)`. It validates chronological replay pages. `FIXTURE_RSS_URLS` sets the comma-separated endpoints that use this fixture-specific protocol. The default is the local fake feed URL above. The API also accepts `TRUSTED_RSS_URLS` as the prior name for this setting.
 
-The feed store accepts only configured fixture URLs and enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps the article checkpoint. Intervals must produce a timestamp the UI can display. Re-enabling or replacing the URL clears the baseline and prior poll health.
+## Public RSS
+
+Admins can use public HTTP or HTTPS RSS URLs, including URLs with query parameters. Each poll reads the current RSS 2.0 or RSS 1.0 snapshot. Requests and redirects to nonpublic network addresses are blocked. The adapter returns normalized articles with stable identifiers, titles, optional links, and publication times when provided.
+
+The feed store enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps its checkpoint. Re-enabling or replacing the URL clears the baseline and prior poll health.
 
 `GET /api/admin/feeds` returns `{feeds}`. `POST /api/admin/feeds` takes `url`, `publisher`, `topic`, and optional `enabled` and `pollIntervalSeconds`. It returns the created feed with HTTP 201. `PATCH /api/admin/feeds/:id` accepts changes to these fields and returns the updated feed. Feed responses also include `id`, `nextPollAt`, `lastPollAttemptAt`, `lastPollSuccessAt`, and `lastPollError`. Timestamps use UTC Unix milliseconds. Duplicate URLs return HTTP 409 and other invalid settings return HTTP 400.
 
@@ -54,10 +58,12 @@ The API process checks for due deliveries once per second. The worker cancels a 
 
 ## Replay and checkpoints
 
-The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.
+The first successful poll establishes a baseline without queueing email. For the fake feed, later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled fake feed continues from its last committed page.
 
-The API process checks for due feeds once per second and runs one shared polling cycle per due feed. It saves attempt and success times and the latest error. Failed cycles retry after five seconds, doubling the delay up to five minutes. Disabling a feed or changing its URL invalidates in-flight results. Set `TRUSTED_RSS_URLS` to a comma-separated list when running with fixture URLs other than the default. Run one API process per demo database.
+For a public feed, SQLite keeps the item ID fingerprints from the latest nonempty snapshot alongside the feed settings. Each new snapshot and any delivery jobs commit together. Comparing identities handles out-of-order entries and several items with the same timestamp. Dated entries use their publication time for subscription matching, and undated entries use their first observed time. Catch-up is limited to items still exposed by the publisher. The app keeps no article archive.
+
+The API process checks for due feeds once per second and runs one shared polling cycle per due feed. It saves attempt and success times and the latest error. Failed cycles retry after five seconds, doubling the delay up to five minutes. Disabling a feed or changing its URL invalidates in-flight results. Run one API process per demo database.
 
 ## Extension points
 
-The feed poller accepts a source factory. A new source can return normalized events and provide its own snapshot and replay implementation. The worker accepts a map of delivery channels. To add Slack, register an adapter that sends the shared alert payload and reports the send outcome, then add destination resolution and eligibility for Slack subscriptions. The queue already stores the channel and destination with each job.
+The feed poller accepts a source factory. A new source can return normalized events using a snapshot or its own timestamp and page replay protocol. The worker accepts a map of delivery channels. To add Slack, register an adapter that sends the shared alert payload and reports the send outcome, then add destination resolution and eligibility for Slack subscriptions. The queue already stores the channel and destination with each job.

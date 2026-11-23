@@ -229,3 +229,7 @@ The implementation followed the numbered tasks sequentially in one workspace. Th
 > pls implement these E5, E7, E3, E1, E2
 
 The selected scenarios cover cancellation of delivery retries, cross-account access, RSS replay recovery, polling shared across subscribers, and subscription topic changes. See the [browser test guide](P3-task-04-frontend.md#browser-tests).
+
+## Public RSS URLs
+
+The user requested support for arbitrary RSS URLs and an end-to-end test using the Hungarian Google News feed. Admins can now add public RSS URLs with query parameters. Public feeds use the publisher's current snapshot, and the synthetic feed still supports full replay. Playwright verified the live Google News URL through admin setup, a successful poll, and user subscription.

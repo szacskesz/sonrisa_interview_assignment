@@ -15,7 +15,7 @@ The development server proxies `/api/**` to `http://127.0.0.1:3000`. The session
 
 The subscriptions client lists available topics and current-account subscriptions, and sends topic and status changes through the API. API errors retain their public code and message for form feedback. Network errors and unexpected response bodies use a fallback message.
 
-The admin feeds client lists configuration and poll health, creates trusted feeds, and sends partial updates for settings and toggles. Duplicate URL failures carry the API's validation code.
+The admin feeds client lists configuration and poll health, creates RSS feeds, and sends partial updates for settings and toggles. Duplicate URL failures carry the API's validation code.
 
 The admin deliveries client reads recent jobs with typed status and attempt summaries. It propagates access and network failures for the page to display.
 
@@ -34,5 +34,7 @@ With Mailpit running, install Chromium once with `pnpm --dir frontend exec playw
 The suite covers the automatic browser demo, multi-page restart recovery, strict activation, SMTP retry across a second restart, overlap deduplication, a fresh baseline after re-enable, and no email while paused or after removal. It also checks admin feed edits, duplicate URL feedback, and the UI response when a protected request loses its session. Controlled clocks advance the fake feed without waiting for wall-clock minutes.
 
 The additional scenarios verify shared RSS polling across multiple feeds and subscribers (E1), a browser topic edit and its activation cutoff (E2), recovery after an RSS replay page returns HTTP 503 (E3), cancellation of a queued retry after pause or removal (E5), and subscription ownership and admin permissions over HTTP (E7). The test feed endpoints record actual RSS requests so the tests can check replay cursors and polling frequency.
+
+Set `TEST_LIVE_RSS=1` when running Playwright to also test saving and polling the live Hungarian Google News URL through the admin screen. This scenario requires internet access to Google News.
 
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)

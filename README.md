@@ -72,6 +72,8 @@ pnpm --dir backend fake-rss
 3. Sign in as `user@example.test`, choose **Add subscription**, and save the `World News` topic.
 4. Wait for the fixture to publish a headline after the subscription activates and for the next scheduled poll. Check the [Mailpit inbox](http://127.0.0.1:18025) for an email to `user@example.test` with a subject such as `News 2026-11-23T09:02:00.000Z`. Sign in as the admin again and open **Deliveries** to see its **Sent** status.
 
+You can also add a public RSS URL directly in **Feeds**, including the [Hungarian Google News feed](https://news.google.com/rss?hl=hu&gl=HU&ceid=HU:hu). The first poll establishes a baseline. Later polls pick up new items that still appear in the publisher's feed.
+
 ## Run tests
 
 The standard test suites and production build run independently of the local app and fixture.
@@ -90,5 +92,7 @@ pnpm --dir frontend e2e
 ```
 
 To use an installed Microsoft Edge instead, set `TEST_BROWSER_CHANNEL=msedge` before running the suite. Set `TEST_MAILPIT_URL=http://127.0.0.1:18025` before running the backend tests to include their SMTP integration check.
+
+Set `TEST_LIVE_RSS=1` before running the Playwright suite to include the live Google News scenario. It requires internet access to Google News.
 
 See the [backend guide](docs/P3-task-04-backend.md) for configuration and API details and the [frontend guide](docs/P3-task-04-frontend.md) for browser test coverage.
