@@ -36,6 +36,8 @@ The subscription store scopes reads and writes to the owner's account ID. Creati
 
 `GET /api/topics` returns `{topics: string[]}` for a signed-in account. Topics are distinct and come from enabled feeds.
 
+`GET /api/subscriptions` returns `{subscriptions}`. Each subscription includes `id`, `topic`, `status`, `destination`, `createdAt`, and `activatedAt`. `POST /api/subscriptions` takes a topic and returns the created record with HTTP 201. `PATCH /api/subscriptions/:id` accepts `topic`, `status`, or both, and returns the updated record. `DELETE /api/subscriptions/:id` returns HTTP 204. An ID outside the signed-in account's ownership returns HTTP 404. Creating a subscription or switching its topic requires a currently enabled feed for that topic.
+
 The matcher returns distinct account emails for active subscriptions whose topic matches the event and whose activation precedes its publication. The single-recipient check uses the same rule against current data.
 
 ## Delivery queue

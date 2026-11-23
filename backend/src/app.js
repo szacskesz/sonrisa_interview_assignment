@@ -12,6 +12,7 @@ import { createMatcher } from './matching.js';
 import { startPeriodicTask } from './periodic-task.js';
 import { createRssSource } from './rss-source.js';
 import { configureSessionApi } from './session-api.js';
+import { configureSubscriptionsApi } from './subscriptions-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
 import { configureTopicsApi } from './topics-api.js';
 
@@ -25,6 +26,7 @@ export function createApp({
   configureApiErrors(app);
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
   configureTopicsApi(app);
+  configureSubscriptionsApi(app);
   const database = openDatabase(databasePath);
   app.decorate('database', database);
   app.decorate('services', null);

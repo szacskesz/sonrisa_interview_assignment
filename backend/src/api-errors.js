@@ -6,6 +6,10 @@ export class ApiError extends Error {
   }
 }
 
+export const recordIdParams = {
+  type: 'object', required: ['id'], properties: { id: { type: 'string', pattern: '^[1-9][0-9]{0,15}$' } },
+};
+
 /** Return stable public errors without serializing internal or credential data. */
 export function configureApiErrors(app) {
   app.setErrorHandler((error, request, reply) => {

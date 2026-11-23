@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { defaultFixtureUrl } from '../src/feeds.js';
+import { createApiFixture } from '../test-support/api.js';
+
+test('creates, edits, pauses, resumes and removes subscriptions for the signed-in owner', async (t) => {
+  let time = 100;
+  const markets = 'http://127.0.0.1:18081/rss.xml';
+  const { app, request } = await createApiFixture(t, { now: () => time, trustedUrls: [defaultFixtureUrl, markets] });
+  const feeds = app.services.feeds;
+  feeds.create({ url: defaultFixtureUrl, publisher: 'Fixture', topic: 'World' });
+  const alternate = feeds.create({ url: markets, publisher: 'Fixture', topic: 'Markets' });
+  const path = '/api/subscriptions';
+  assert.equal((await request(null, 'GET', path)).statusCode, 401);
+  assert.equal((await request(2, 'POST', path, { topic: 'Unknown' })).json().code, 'topic_unavailable');
+  assert.equal((await request(2, 'POST', path, { topic: 'World', destination: 'other@example.test' })).statusCode, 400);
+  const created = await request(2, 'POST', path, { topic: 'World' });
+  assert.equal(created.statusCode, 201);
+  const row = created.json();
+  assert.deepEqual(row, { id: 1, topic: 'World', status: 'active', destination: 'reader@example.test', createdAt: 100, activatedAt: 100 });
+  assert.deepEqual((await request(2, 'GET', path)).json(), { subscriptions: [row] });
+  assert.deepEqual((await request(3, 'GET', path)).json(), { subscriptions: [] });
+  const item = `${path}/${row.id}`;
+  assert.equal((await request(3, 'PATCH', item, { status: 'paused' })).statusCode, 404);
+  assert.equal((await request(3, 'DELETE', item)).statusCode, 404);
+  assert.equal((await request(2, 'PATCH', item, { status: 'unknown' })).statusCode, 400);
+  time = 200;
+  const updated = await request(2, 'PATCH', item, { topic: 'Markets' });
+  assert.equal(updated.json().activatedAt, 200);
+  feeds.update(alternate.id, { enabled: false });
+  assert.equal((await request(2, 'GET', path)).json().subscriptions[0].topic, 'Markets');
+  assert.equal((await request(2, 'PATCH', item, { status: 'paused' })).json().activatedAt, 200);
+  time = 300;
+  assert.equal((await request(2, 'PATCH', item, { status: 'active' })).json().activatedAt, 300);
+  assert.equal((await request(2, 'DELETE', item)).statusCode, 204);
+  assert.equal((await request(2, 'DELETE', item)).statusCode, 404);
+});
