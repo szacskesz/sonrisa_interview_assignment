@@ -5,10 +5,10 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test as base } from '@playwright/test';
-import { startFakeFeed } from '../../backend/fixtures/fake-rss.js';
 import { seedDemoAccounts } from '../../backend/src/accounts.js';
 import { createApp } from '../../backend/src/app.js';
 import { createEmailChannel } from '../../backend/src/email-channel.js';
+import { startObservedFeed } from './observed-feed.mjs';
 
 export const initialTime = Date.parse('2026-11-23T09:02:00.000Z');
 const webBuild = new URL('../dist/world-event-alerts/browser/', import.meta.url);
@@ -31,7 +31,7 @@ export const test = base.extend({
     try {
       await mailpit('/api/v1/messages?limit=1');
       const now = () => time;
-      feed = await startFakeFeed({ now, pageSize: 2 });
+      feed = await startObservedFeed(now);
       server = createServer((request, response) => {
         const { pathname } = new URL(request.url, 'http://127.0.0.1');
         if (pathname.startsWith('/api/')) {
@@ -79,7 +79,7 @@ export const test = base.extend({
         DEMO_ADMIN_EMAIL: admin, DEMO_ADMIN_PASSWORD: password, DEMO_USER_EMAIL: lateUser, DEMO_USER_PASSWORD: password,
       });
       await use({
-        url, admin, user, lateUser, password, feedUrl: feed.url, now,
+        url, admin, user, lateUser, password, feedUrl: feed.url, feed, now,
         advance(milliseconds) { time += milliseconds; },
         async stop() {
           const current = app;
