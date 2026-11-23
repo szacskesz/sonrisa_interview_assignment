@@ -19,6 +19,15 @@ export function createSlackChannel({ botToken, workspaceId }, { fetchRequest = f
   const cooldowns = new Map();
   let verifiedWorkspace = false;
 
+  function rateLimited(method, response) {
+    const delay = Number(response.headers.get('Retry-After'));
+    const currentTime = now();
+    const deadline = currentTime + delay * 1000;
+    const retryAt = Number.isInteger(delay) && delay > 0 && Number.isSafeInteger(deadline) ? deadline : currentTime + 60_000;
+    cooldowns.set(method, retryAt);
+    return { result: { status: 'retryable', error: 'Slack rate limit', retryAt } };
+  }
+
   async function call(method, body) {
     const retryAt = cooldowns.get(method);
     if (retryAt > now()) return { result: { status: 'retryable', error: 'Slack rate limit', retryAt } };
@@ -28,20 +37,14 @@ export function createSlackChannel({ botToken, workspaceId }, { fetchRequest = f
         headers: { Authorization: `Bearer ${botToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (response.status === 429) {
-        const delay = Number(response.headers.get('Retry-After'));
-        const currentTime = now();
-        const deadline = currentTime + delay * 1000;
-        const retryAt = Number.isInteger(delay) && delay > 0 && Number.isSafeInteger(deadline) ? deadline : currentTime + 60_000;
-        cooldowns.set(method, retryAt);
-        return { result: { status: 'retryable', error: 'Slack rate limit', retryAt } };
-      }
+      if (response.status === 429) return rateLimited(method, response);
       if (!response.ok) return { result: {
         status: response.status >= 500 || response.status === 408 ? 'retryable' : 'permanent',
         error: `Slack returned HTTP ${response.status}`,
       } };
       const data = await response.json();
       if (data?.ok === true) return { data };
+      if (data?.error === 'ratelimited') return rateLimited(method, response);
       if (temporaryErrors.has(data?.error)) return { result: { status: 'retryable', error: 'Slack service error' } };
       const reason = knownErrors.has(data?.error) ? ` (${data.error})` : '';
       return { result: { status: 'permanent', error: `Slack rejected the request${reason}` } };

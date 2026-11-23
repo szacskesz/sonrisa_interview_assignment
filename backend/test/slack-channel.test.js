@@ -40,6 +40,7 @@ test('honors rate limits and handles safe permanent and temporary failure outcom
     Response.json({ ok: true, team_id: 'T123', bot_id: 'B123' }),
     new Response('', { status: 429, headers: { 'Retry-After': '75' } }),
     new Response('', { status: 503 }),
+    Response.json({ ok: false, error: 'ratelimited' }, { headers: { 'Retry-After': '7' } }),
     Response.json({ ok: false, error: 'missing_scope', secret: config.botToken }),
   ];
   const channel = createSlackChannel(config, { now: () => time, fetchRequest: async () => {
@@ -52,6 +53,8 @@ test('honors rate limits and handles safe permanent and temporary failure outcom
   assert.equal(calls, 2);
   time = 75_010;
   assert.equal((await channel.send(destination, alert)).status, 'retryable');
+  assert.equal((await channel.send(destination, alert)).retryAt, 82_010);
+  time = 82_010;
   assert.deepEqual(await channel.send(destination, alert), { status: 'permanent', error: 'Slack rejected the request (missing_scope)' });
 });
 

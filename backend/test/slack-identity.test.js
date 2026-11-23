@@ -23,14 +23,15 @@ test('validates Slack signature and claims before returning only the workspace a
   assert.equal(authorize.searchParams.get('response_mode'), 'query');
   assert.equal(authorize.searchParams.get('scope'), 'openid profile');
   const token = (claims = {}, key = privateKey) => new SignJWT({
-    iss: issuer, aud: config.clientId, sub: 'U123', nonce: 'nonce',
+    iss: issuer, aud: config.clientId, sub: 'stable-subject', nonce: 'nonce',
     ['https://slack.com/team_id']: 'T123', ['https://slack.com/user_id']: 'U123',
     exp: Math.floor(Date.now() / 1000) + 60, ...claims,
   }).setIssuedAt().setProtectedHeader({ alg: 'RS256' }).sign(key);
   idToken = await token();
   assert.deepEqual(await client.exchange('code', 'nonce'), { workspaceId: 'T123', memberId: 'U123' });
   for (const claims of [{ nonce: 'other' }, { ['https://slack.com/team_id']: 'T999' },
-    { iss: 'https://example.test' }, { aud: 'other' }, { exp: 0 }, { sub: 'U999' }]) {
+    { iss: 'https://example.test' }, { aud: 'other' }, { exp: 0 }, { sub: '' },
+    { ['https://slack.com/user_id']: 'invalid' }]) {
     idToken = await token(claims);
     await assert.rejects(client.exchange('code', 'nonce'));
   }

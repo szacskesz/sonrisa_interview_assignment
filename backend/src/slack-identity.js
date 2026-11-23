@@ -50,7 +50,7 @@ export function createSlackIdentity(config, {
       });
       const memberId = payload[memberClaim];
       if (payload.nonce !== nonce || payload[workspaceClaim] !== workspaceId ||
-          typeof memberId !== 'string' || !memberPattern.test(memberId) || payload.sub !== memberId ||
+          typeof memberId !== 'string' || !memberPattern.test(memberId) || typeof payload.sub !== 'string' || !payload.sub ||
           (Array.isArray(payload.aud) && payload.aud.length > 1 && payload.azp !== clientId)) {
         throw new Error('Slack identity did not match the connection request');
       }
