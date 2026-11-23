@@ -43,6 +43,8 @@ Each task has one reviewable outcome. Include the task's tests and public interf
 
 ### Angular frontend
 
+The [click-through wireframes](P2-task-04-ui-wireframes.html) show the four pages, the subscription and feed dialogs, and the main empty, loading, validation, and access states. Open the file in a browser and use the review navigation and preview-state selector. The wireframes use sample data and keep interactions local to the preview. Playwright checks in Edge covered role navigation, subscription and feed actions, alternate states, and desktop and mobile layout.
+
 | ID | Task | Depends on | Completion check |
 | --- | --- | --- | --- |
 | P3-20 | Scaffold the Angular project | — | Angular starts, builds, and runs its base tests independently of backend scaffolding. |

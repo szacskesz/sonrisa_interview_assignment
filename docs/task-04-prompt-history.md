@@ -190,3 +190,12 @@ Recommendation pending confirmation: remove per-attempt history, use expiring si
 ```
 
 Decision: keep a small delivery job table, store the retry summary on each job, use expiring JWTs without server-side session or revocation storage, and match subscriptions by topic across feeds. The [database review](P2-task-04-database-review.md) describes the four-table schema and how the worker rechecks current eligibility.
+
+## Phase 2 UI wireframe review
+
+```text
+- SQL looks fine now.
+- Based on the plan please create wireframes of every page/screen so i can verify thir correctness
+```
+
+Result: the [wireframes](P2-task-04-ui-wireframes.html) show sign-in, subscriptions, admin feeds, and admin deliveries, including forms and alternate states. The SQL approval and screen review are recorded before Phase 3 implementation.

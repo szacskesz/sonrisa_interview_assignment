@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Alerts wireframes</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: light; font: 16px/1.5 system-ui, sans-serif; color: #20262e; background: #f2f4f6; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; }
+    a { color: #254374; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+    button, input, select { font: inherit; }
+    button, a, input, select { outline-offset: 3px; }
+    :focus-visible { outline: 2px solid #295aab; }
+    .review { max-width: 1120px; margin: auto; padding: 30px 24px 36px; }
+    .review h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2.05rem); line-height: 1.2; letter-spacing: -.035em; }
+    .review > p { margin: 7px 0 20px; color: #505966; }
+    .review-bar, .review-nav, .actions, .screen-heading, .app-header, .app-nav, .form-actions {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .review-bar { justify-content: space-between; padding-bottom: 13px; }
+    .review-nav { gap: 5px; }
+    .review-nav a, .app-nav a { padding: 7px 10px; border-radius: 6px; color: #303b4a; text-decoration: none; }
+    .review-nav a[aria-current="page"], .app-nav a[aria-current="page"] {
+      color: #192c52; background: #dfe8f6; font-weight: 650;
+    }
+    .state-picker { display: flex; align-items: center; gap: 7px; font-size: .875rem; color: #414b59; white-space: nowrap; }
+    .state-picker select { padding: 5px 8px; }
+    .app-frame { background: #fff; border: 1px solid #b9c2cd; border-radius: 10px; min-height: 420px; overflow: hidden; }
+    .app-header { justify-content: space-between; min-height: 62px; padding: 9px 22px; border-bottom: 1px solid #dce1e7; }
+    .brand { display: flex; align-items: center; gap: 9px; color: #1d2938; font-weight: 740; }
+    .brand-mark { width: 23px; height: 23px; border: 2px solid #405470; border-radius: 5px; display: grid; place-items: center; }
+    .brand-mark::before { content: ""; width: 8px; height: 8px; border: 1px solid #405470; transform: rotate(45deg); }
+    .app-nav { gap: 5px; font-size: .9rem; }
+    .app-nav a:last-child { margin-inline-start: 6px; }
+    .app-content { padding: 25px 23px 32px; }
+    .screen-heading { justify-content: space-between; margin-bottom: 18px; }
+    h2, h3, p { margin: 0; }
+    h2 { font-size: 1.52rem; line-height: 1.3; letter-spacing: -.025em; }
+    h3 { font-size: 1.11rem; }
+    .secondary { color: #505c6b; font-size: .89rem; }
+    .screen-heading p { margin-top: 3px; }
+    button, .button { display: inline-block; border: 1px solid #aeb9c7; background: #fff; color: #202c3e; border-radius: 6px; padding: 7px 11px; text-decoration: none; cursor: pointer; }
+    .primary { background: #263a5b; border-color: #263a5b; color: #fff; font-weight: 650; }
+    .danger { color: #862f36; }
+    .danger.primary { background: #862f36; border-color: #862f36; color: white; }
+    button:disabled { cursor: default; opacity: .55; }
+    button:not(:disabled):hover, .button:hover { box-shadow: inset 0 0 0 1px currentColor; }
+    .actions { gap: 5px; }
+    .actions button { padding: 4px 7px; font-size: .81rem; }
+    .table-frame { border: 1px solid #dce1e7; border-radius: 7px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font-size: .88rem; }
+    th { padding: 9px 12px; color: #394455; background: #f3f5f8; font-weight: 650; }
+    th:first-child { border-radius: 7px 0 0 0; }
+    th:last-child { border-radius: 0 7px 0 0; }
+    td { padding: 11px 12px; border-top: 1px solid #e1e5ea; vertical-align: top; overflow-wrap: anywhere; }
+    td small { display: block; margin-top: 3px; line-height: 1.4; }
+    .subscriptions col:nth-child(1), .subscriptions col:nth-child(4) { width: 28%; }
+    .feeds col:nth-child(1) { width: 32%; }
+    .feeds col:nth-child(3) { width: 28%; }
+    .deliveries col:nth-child(1) { width: 35%; }
+    .deliveries col:nth-child(4) { width: 10%; }
+    .deliveries col:nth-child(5) { width: 25%; }
+    .badge { display: inline-block; padding: 2px 7px; background: #eef1f5; border: 1px solid #ccd5df; border-radius: 5px; font-size: .8rem; line-height: 1.4; white-space: nowrap; }
+    .badge.good { color: #245645; background: #eaf4ee; border-color: #c1dbcc; }
+    .badge.bad { color: #792b35; background: #fbeced; border-color: #e9c7cb; }
+    .badge.warning { color: #634419; background: #f8f1e3; border-color: #e4d4ad; }
+    .notice, .state-panel { margin: 0 0 14px; padding: 12px 14px; border: 1px solid #ccd6e4; border-radius: 7px; background: #f4f7fb; }
+    .state-panel { padding: 18px; }
+    .state-panel p, .state-panel a, .state-panel button { margin-top: 6px; }
+    .feedback { margin: 13px 23px 0; }
+    .sign-in { width: min(100%, 364px); margin: 14px auto 5px; padding: 20px; border: 1px solid #dce1e7; border-radius: 8px; }
+    .sign-in form { margin-top: 13px; }
+    .sign-in .primary { width: 100%; margin-top: 3px; }
+    form label { display: grid; gap: 4px; margin-bottom: 10px; font-size: .9rem; font-weight: 600; }
+    input, select { width: 100%; min-width: 0; border: 1px solid #aeb9c7; border-radius: 5px; background: white; color: #20262e; padding: 7px 9px; }
+    input[type="checkbox"] { width: auto; }
+    .checkbox { display: flex; align-items: center; gap: 8px; }
+    .inline-error { color: #862f36; font-size: .87rem; margin: 4px 0 9px; }
+    #feed-hint { margin: -5px 0 10px; }
+    [aria-invalid="true"] { border-color: #862f36; }
+    dialog { width: min(470px, calc(100vw - 24px)); padding: 21px; border: 1px solid #aeb9c7; border-radius: 9px; color: #20262e; }
+    dialog::backdrop { background: #1d293860; }
+    dialog h2 { margin-bottom: 7px; }
+    dialog form { margin-top: 12px; }
+    .form-actions { justify-content: flex-end; margin-top: 12px; }
+    @media (max-width: 680px) {
+      .review { padding: 20px 12px; }
+      .app-header { padding: 8px 12px; }
+      .app-content { padding: 17px 12px 23px; }
+      .feedback { margin-inline: 12px; }
+      .sign-in { padding: 16px; }
+      colgroup { display: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      tr + tr { border-top: 1px solid #c5ced9; }
+      tr { padding: 6px 0; }
+      td { display: grid; grid-template-columns: minmax(85px, .7fr) minmax(0, 1.3fr); gap: 7px; border: 0; padding: 5px 9px; }
+      td::before { content: attr(data-label); font-weight: 650; color: #394455; }
+    }
+  </style>
+</head>
+<body>
+<main class="review">
+  <h1>World Alerts wireframes</h1>
+  <p>Review pages and states with sample data. Changes stay in this preview.</p>
+  <div class="review-bar">
+    <nav class="review-nav" aria-label="Review screens">
+      <a href="#sign-in">Sign in</a>
+      <a href="#subscriptions">Subscriptions</a>
+      <a href="#feeds">Admin feeds</a>
+      <a href="#deliveries">Admin deliveries</a>
+    </nav>
+    <label class="state-picker">Preview state <select id="preview-state"></select></label>
+  </div>
+
+  <article class="app-frame" aria-label="Application wireframe">
+    <header class="app-header">
+      <span class="brand"><span class="brand-mark" aria-hidden="true"></span>World Alerts</span>
+      <nav class="app-nav" aria-label="Application navigation" id="app-nav" hidden>
+        <a href="#subscriptions" data-role="user">Subscriptions</a>
+        <a href="#feeds" data-role="admin">Feeds</a>
+        <a href="#deliveries" data-role="admin">Deliveries</a>
+        <a href="#sign-in">Sign out</a>
+      </nav>
+    </header>
+    <p class="notice feedback" id="feedback" role="status" hidden></p>
+
+    <section class="app-content" data-screen="sign-in">
+      <div class="sign-in">
+        <h2>Sign in</h2>
+        <p class="secondary">Use your provisioned account.</p>
+        <form id="sign-in-form">
+          <label>Email <input name="email" type="email" list="review-accounts" autocomplete="username" value="user@example.test" required></label>
+          <datalist id="review-accounts"><option value="user@example.test"></option><option value="admin@example.test"></option></datalist>
+          <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+          <p id="sign-in-message" class="inline-error" role="alert" hidden></p>
+          <button class="primary">Sign in</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="app-content" data-screen="subscriptions" hidden>
+      <div class="screen-heading">
+        <div><h2>Subscriptions</h2><p class="secondary">Alerts go to user@example.test.</p></div>
+        <button class="primary" id="add-subscription" data-action="add-subscription">Add subscription</button>
+      </div>
+      <div class="state-panel" data-panel hidden></div>
+      <div class="table-frame" data-table>
+        <table class="subscriptions" aria-label="Your subscriptions">
+          <colgroup><col><col><col><col></colgroup>
+          <thead><tr><th scope="col">Topic</th><th scope="col">Status</th><th scope="col">Activated (UTC)</th><th scope="col">Actions</th></tr></thead>
+          <tbody id="subscription-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="app-content" data-screen="feeds" hidden>
+      <div class="screen-heading"><h2>RSS feeds</h2><button class="primary" id="add-feed" data-action="add-feed">Add feed</button></div>
+      <div class="state-panel" data-panel hidden></div>
+      <div class="table-frame" data-table>
+        <table class="feeds" aria-label="Configured RSS feeds">
+          <colgroup><col><col><col><col></colgroup>
+          <thead><tr><th scope="col">Feed</th><th scope="col">Topic and interval</th><th scope="col">Poll health (UTC)</th><th scope="col">Actions</th></tr></thead>
+          <tbody id="feed-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="app-content" data-screen="deliveries" hidden>
+      <div class="screen-heading"><h2>Deliveries</h2></div>
+      <div class="state-panel" data-panel hidden></div>
+      <div class="table-frame" data-table>
+        <table class="deliveries" aria-label="Recent deliveries">
+          <colgroup><col><col><col><col><col></colgroup>
+          <thead><tr><th scope="col">Headline</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Attempts</th><th scope="col">Latest error</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Headline">News 2026-11-23T09:04:00.000Z</td><td data-label="Source">Sonrisa Demo News</td><td data-label="Status"><span class="badge good">Sent</span></td><td data-label="Attempts">1</td><td data-label="Latest error">—</td></tr>
+            <tr><td data-label="Headline">News 2026-11-23T09:03:00.000Z</td><td data-label="Source">Sonrisa Demo News</td><td data-label="Status"><span class="badge warning">Retrying</span></td><td data-label="Attempts">2</td><td data-label="Latest error">SMTP temporarily unavailable</td></tr>
+            <tr><td data-label="Headline">News 2026-11-23T09:02:00.000Z</td><td data-label="Source">Sonrisa Demo News</td><td data-label="Status"><span class="badge bad">Failed</span></td><td data-label="Attempts">1</td><td data-label="Latest error">Recipient address rejected</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </article>
+</main>
+
+<dialog id="subscription-dialog" aria-labelledby="subscription-title">
+  <h2 id="subscription-title"></h2>
+  <p class="secondary" id="subscription-hint"></p>
+  <form id="subscription-form">
+    <label>Topic <select name="topic" required></select></label>
+    <div class="form-actions"><button type="button" data-action="close-dialog">Cancel</button><button class="primary">Save subscription</button></div>
+  </form>
+</dialog>
+
+<dialog id="remove-dialog" aria-labelledby="remove-title">
+  <h2 id="remove-title">Remove subscription?</h2>
+  <p id="remove-copy"></p>
+  <form method="dialog" id="remove-form">
+    <div class="form-actions"><button type="button" data-action="close-dialog">Cancel</button><button class="danger primary">Remove subscription</button></div>
+  </form>
+</dialog>
+
+<dialog id="feed-dialog" aria-labelledby="feed-title">
+  <h2 id="feed-title"></h2>
+  <form id="feed-form">
+    <label>Feed URL <input name="url" type="url" list="fixture-urls" aria-describedby="feed-hint feed-error" required></label>
+    <datalist id="fixture-urls"><option value="http://127.0.0.1:18080/rss.xml"></option><option value="http://127.0.0.1:18081/rss.xml"></option></datalist>
+    <p class="secondary" id="feed-hint">Use a configured demo feed URL.</p>
+    <p class="inline-error" id="feed-error" role="alert" hidden></p>
+    <label>Publisher <input name="publisher" required></label>
+    <label>Topic <input name="topic" required></label>
+    <label>Polling interval (seconds) <input name="interval" type="number" min="1" step="1" required></label>
+    <label class="checkbox"><input name="enabled" type="checkbox">Enabled</label>
+    <div class="form-actions"><button type="button" data-action="close-dialog">Cancel</button><button class="primary">Save feed</button></div>
+  </form>
+</dialog>
+
+<script>
+  const screens = [...document.querySelectorAll('[data-screen]')];
+  const stateSelect = document.querySelector('#preview-state');
+  const feedback = document.querySelector('#feedback');
+  const subscriptionForm = document.querySelector('#subscription-form');
+  const feedForm = document.querySelector('#feed-form');
+  const fixtureUrls = [...document.querySelectorAll('#fixture-urls option')].map((option) => option.value);
+  const states = {
+    'sign-in': ['Default', 'Invalid credentials', 'Expired session'],
+    subscriptions: ['Default', 'Empty', 'No enabled topics', 'Loading', 'Load error'],
+    feeds: ['Default', 'Empty', 'Waiting for first poll', 'Poll failed', 'Duplicate URL', 'Loading', 'Load error', 'Access denied'],
+    deliveries: ['Default', 'Empty', 'Loading', 'Load error', 'Access denied'],
+  };
+  const subscriptions = [
+    { topic: 'World news', active: true, activated: 'Nov 23, 09:01' },
+    { topic: 'Science', active: false, activated: 'Nov 23, 08:55' },
+  ];
+  const feeds = [{ url: fixtureUrls[0], publisher: 'Sonrisa Demo News', topic: 'World news', interval: 60, enabled: true }];
+  let page;
+  let state = 'Default';
+  let selectedIndex;
+
+  function enabledTopics() {
+    return [...new Set(feeds.filter((feed) => feed.enabled).map((feed) => feed.topic))];
+  }
+
+  function element(tag, text, className) {
+    const node = document.createElement(tag);
+    if (text !== undefined) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+
+  function showMessage(text) {
+    feedback.textContent = text;
+    feedback.hidden = !text;
+  }
+
+  function addRow(tbody, cells) {
+    const row = tbody.insertRow();
+    for (const [label, ...children] of cells) {
+      const cell = row.insertCell();
+      cell.dataset.label = label;
+      const content = element('div');
+      content.append(...children);
+      cell.append(content);
+    }
+  }
+
+  function actionGroup(index, actions) {
+    const group = element('div', undefined, 'actions');
+    for (const [label, action, optionalClass] of actions) {
+      const button = element('button', label, optionalClass);
+      button.type = 'button';
+      button.dataset.action = action;
+      button.dataset.index = index;
+      if (action === 'edit-subscription' && (state === 'No enabled topics' || enabledTopics().length === 0)) button.disabled = true;
+      group.append(button);
+    }
+    return group;
+  }
+
+  function renderSubscriptions() {
+    const tbody = document.querySelector('#subscription-rows');
+    tbody.replaceChildren();
+    subscriptions.forEach((subscription, index) => {
+      addRow(tbody, [
+        ['Topic', element('strong', subscription.topic)],
+        ['Status', element('span', subscription.active ? 'Active' : 'Paused', subscription.active ? 'badge good' : 'badge')],
+        ['Activated (UTC)', subscription.activated],
+        ['Actions', actionGroup(index, [
+          ['Edit', 'edit-subscription'],
+          [subscription.active ? 'Pause' : 'Resume', 'toggle-subscription'],
+          ['Remove', 'remove-subscription', 'danger'],
+        ])],
+      ]);
+    });
+  }
+
+  function renderFeeds() {
+    const tbody = document.querySelector('#feed-rows');
+    tbody.replaceChildren();
+    feeds.forEach((feed, index) => {
+      const noSuccessfulPoll = feed.newFeed || state === 'Waiting for first poll';
+      const failed = feed.enabled && state === 'Poll failed';
+      const waiting = feed.enabled && noSuccessfulPoll && !failed;
+      const health = !feed.enabled ? 'Disabled' : failed ? 'Poll failed' : waiting ? 'Waiting' : 'Healthy';
+      const pollLines = [element('span', health, health === 'Healthy' ? 'badge good' : failed ? 'badge bad' : 'badge')];
+      pollLines.push(element('small', noSuccessfulPoll ? 'No successful poll yet' : 'Last success: Nov 23, 09:04', 'secondary'));
+      if (failed) pollLines.push(element('small', 'Last attempt: 09:05 · Feed timed out', 'inline-error'));
+      if (feed.enabled) pollLines.push(element('small', waiting ? 'First poll scheduled' : failed ? 'Next poll: 09:06' : 'Next poll: 09:05', 'secondary'));
+      addRow(tbody, [
+        ['Feed', element('strong', feed.publisher), element('small', feed.url, 'secondary')],
+        ['Topic and interval', feed.topic, element('small', 'Every ' + feed.interval + ' seconds', 'secondary')],
+        ['Poll health (UTC)', ...pollLines],
+        ['Actions', actionGroup(index, [
+          ['Edit', 'edit-feed'], [feed.enabled ? 'Disable' : 'Enable', 'toggle-feed'],
+        ])],
+      ]);
+    });
+  }
+
+  function renderPanel(screen, title, copy, action) {
+    const panel = screen.querySelector('[data-panel]');
+    panel.replaceChildren();
+    panel.hidden = !title;
+    if (!title) return;
+    panel.append(element('h3', title), element('p', copy, 'secondary'));
+    if (action === 'retry') {
+      const retry = element('button', 'Try again');
+      retry.dataset.action = 'retry';
+      panel.append(retry);
+    } else if (action === 'back') {
+      const back = element('a', 'Back to subscriptions');
+      back.href = '#subscriptions';
+      panel.append(back);
+    }
+  }
+
+  function signInMessage(text) {
+    const message = document.querySelector('#sign-in-message');
+    message.textContent = text;
+    message.hidden = !text;
+  }
+
+  function renderScreen() {
+    const screen = screens.find((section) => section.dataset.screen === page);
+    const role = page === 'subscriptions' || state === 'Access denied' ? 'user' : 'admin';
+    for (const link of document.querySelectorAll('#app-nav [data-role]')) link.hidden = link.dataset.role !== role;
+    if (page === 'sign-in') {
+      signInMessage(state === 'Invalid credentials' ? 'Email or password is incorrect.' :
+        state === 'Expired session' ? 'Your session expired. Sign in again.' : '');
+      return;
+    }
+    const subject = page === 'subscriptions' ? 'subscriptions' : page === 'feeds' ? 'feeds' : 'deliveries';
+    const empty = state === 'Empty' || (page === 'feeds' && feeds.length === 0) ||
+      (page === 'subscriptions' && subscriptions.length === 0);
+    const noTopics = page === 'subscriptions' && (state === 'No enabled topics' || enabledTopics().length === 0);
+    const forbidden = state === 'Access denied';
+    const unavailable = ['Loading', 'Load error', 'Access denied'].includes(state);
+    screen.querySelector('[data-table]').hidden = empty || unavailable;
+    if (forbidden) renderPanel(screen, 'Access denied', 'This page is available to administrators.', 'back');
+    else if (state === 'Loading') renderPanel(screen, 'Loading ' + subject + '…', '');
+    else if (state === 'Load error') renderPanel(screen, 'Could not load ' + subject, 'Please try again.', 'retry');
+    else if (noTopics) renderPanel(screen, 'No enabled topics', 'You can manage existing subscriptions while new subscriptions are unavailable.');
+    else if (empty) renderPanel(screen, 'No ' + subject + ' yet',
+      page === 'subscriptions' ? 'Add a subscription to receive email alerts.' :
+        page === 'feeds' ? 'Add a feed to make its topic available to users.' :
+          'Delivery results will appear here after a matching headline is processed.');
+    else renderPanel(screen);
+    if (page === 'subscriptions') {
+      document.querySelector('#add-subscription').disabled = unavailable || noTopics;
+      renderSubscriptions();
+    }
+    if (page === 'feeds') {
+      document.querySelector('#add-feed').disabled = unavailable;
+      renderFeeds();
+    }
+  }
+
+  function showScreen() {
+    const requested = location.hash.slice(1);
+    page = Object.hasOwn(states, requested) ? requested : 'sign-in';
+    state = 'Default';
+    document.querySelector('dialog[open]')?.close();
+    showMessage('');
+    for (const screen of screens) screen.hidden = screen.dataset.screen !== page;
+    const appNav = document.querySelector('#app-nav');
+    appNav.hidden = page === 'sign-in';
+    for (const link of document.querySelectorAll('nav a')) {
+      if (link.hash === '#' + page) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+    stateSelect.replaceChildren(...states[page].map((label) => new Option(label)));
+    renderScreen();
+  }
+
+  function chooseState(value) {
+    state = value;
+    stateSelect.value = value;
+    showMessage('');
+    renderScreen();
+    if (value === 'Duplicate URL') {
+      openFeed();
+      feedForm.elements.url.value = feeds[0].url;
+      feedError('This feed URL is already configured.');
+    }
+  }
+
+  function openSubscription(index) {
+    selectedIndex = index;
+    const record = subscriptions[index];
+    document.querySelector('#subscription-title').textContent = record ? 'Edit subscription' : 'Add subscription';
+    document.querySelector('#subscription-hint').textContent = record ?
+      'Changing the topic starts alerts from the time you save.' : 'You will receive new headlines after this subscription starts.';
+    const topics = enabledTopics();
+    subscriptionForm.elements.topic.replaceChildren(new Option('Select a topic', ''), ...topics.map((topic) => new Option(topic)));
+    if (record && topics.includes(record.topic)) subscriptionForm.elements.topic.value = record.topic;
+    document.querySelector('#subscription-dialog').showModal();
+  }
+
+  function feedError(text) {
+    const error = document.querySelector('#feed-error');
+    error.textContent = text;
+    error.hidden = !text;
+    feedForm.elements.url.setAttribute('aria-invalid', text ? 'true' : 'false');
+  }
+
+  function openFeed(index) {
+    selectedIndex = index;
+    const record = feeds[index];
+    document.querySelector('#feed-title').textContent = record ? 'Edit feed' : 'Add feed';
+    feedForm.elements.url.value = record?.url ?? '';
+    feedForm.elements.publisher.value = record?.publisher ?? '';
+    feedForm.elements.topic.value = record?.topic ?? '';
+    feedForm.elements.interval.value = record?.interval ?? 300;
+    feedForm.elements.enabled.checked = record?.enabled ?? true;
+    feedError('');
+    document.querySelector('#feed-dialog').showModal();
+  }
+
+  function finish(text) {
+    document.querySelector('dialog[open]')?.close();
+    chooseState('Default');
+    showMessage(text);
+  }
+
+  document.querySelector('#sign-in-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const email = new FormData(event.target).get('email').trim().toLowerCase();
+    event.target.elements.password.value = '';
+    if (email === 'user@example.test') location.hash = 'subscriptions';
+    else if (email === 'admin@example.test') location.hash = 'feeds';
+    else chooseState('Invalid credentials');
+  });
+  subscriptionForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const topic = subscriptionForm.elements.topic.value;
+    const record = subscriptions[selectedIndex];
+    if (record) {
+      if (record.topic !== topic) record.activated = 'Just now';
+      record.topic = topic;
+    } else subscriptions.push({ topic, active: true, activated: 'Just now' });
+    finish(record ? 'Subscription saved.' : 'Subscription added.');
+  });
+  document.querySelector('#remove-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    subscriptions.splice(selectedIndex, 1);
+    finish('Subscription removed.');
+  });
+  feedForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const url = feedForm.elements.url.value.trim();
+    if (!fixtureUrls.includes(url)) return feedError('Enter a trusted demo feed URL.');
+    if (feeds.some((feed, index) => index !== selectedIndex && feed.url === url)) {
+      return feedError('This feed URL is already configured.');
+    }
+    const record = feeds[selectedIndex];
+    const next = {
+      url, publisher: feedForm.elements.publisher.value.trim(),
+      topic: feedForm.elements.topic.value.trim(), interval: Number(feedForm.elements.interval.value),
+      enabled: feedForm.elements.enabled.checked, newFeed: !record || record.url !== url || record.newFeed,
+    };
+    if (record) feeds[selectedIndex] = next;
+    else feeds.push(next);
+    finish(record ? 'Feed saved.' : 'Feed added.');
+  });
+  feedForm.elements.url.addEventListener('input', () => feedError(''));
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const index = Number(button.dataset.index);
+    switch (button.dataset.action) {
+      case 'add-subscription': openSubscription(); break;
+      case 'edit-subscription': openSubscription(index); break;
+      case 'toggle-subscription': {
+        const subscription = subscriptions[index];
+        subscription.active = !subscription.active;
+        if (subscription.active) subscription.activated = 'Just now';
+        renderScreen();
+        showMessage(subscription.active ? 'Subscription resumed.' : 'Subscription paused.');
+        break;
+      }
+      case 'remove-subscription':
+        selectedIndex = index;
+        document.querySelector('#remove-copy').textContent = 'Remove your ' + subscriptions[index].topic + ' subscription?';
+        document.querySelector('#remove-dialog').showModal();
+        break;
+      case 'add-feed': openFeed(); break;
+      case 'edit-feed': openFeed(index); break;
+      case 'toggle-feed':
+        feeds[index].enabled = !feeds[index].enabled;
+        renderScreen();
+        showMessage(feeds[index].enabled ? 'Feed enabled.' : 'Feed disabled.');
+        break;
+      case 'close-dialog': button.closest('dialog').close(); break;
+      case 'retry': chooseState('Default'); break;
+    }
+  });
+  stateSelect.addEventListener('change', () => chooseState(stateSelect.value));
+  window.addEventListener('hashchange', showScreen);
+  showScreen();
+</script>
+</body>
+</html>
