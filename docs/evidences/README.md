@@ -4,7 +4,7 @@ The screenshots show the built Angular application in Microsoft Edge with the Fa
 
 The evidence run used a controlled clock for the synthetic news. The successful email went through SMTP to an isolated Mailpit inbox. Delayed requests, HTTP errors, and SMTP error responses were injected to capture failure states reliably. The Google News row shows a successful live poll of the public URL.
 
-The [USGS evidence](usgs/README.md) shows the updated Sources page and earthquake delivery flow.
+The [USGS evidence](usgs/README.md) shows the updated Sources page and earthquake delivery flow. The [Slack evidence](slack/README.md) shows the current channel controls, admin delivery outcomes, and the real notification received in Slack.
 
 ## Sign in and access
 
