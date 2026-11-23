@@ -152,3 +152,16 @@ Plase make smaller tasks, because `Create the Node and Angular projects and esta
 ```
 
 Decision: split the [implementation tasks](P2-task-04-demo-implementation-plan.md#implementation-tasks) into individually reviewable changes. Each has an ID, dependencies, and a completion check.
+
+## Phase 2 Delivery and session tables
+
+```text
+After reviewing the sql scheme pls epxlain what are the purpose of these tables:
+
+- delivery_jobs
+- delivery_attempts
+- delivery_job_subscriptions
+- sessions
+```
+
+Explanation: a delivery job represents one notification, attempts record each send, and the link table identifies the subscriptions that matched the job. Sessions associate expiring login tokens with accounts. See the [database review](P2-task-04-database-review.md) for the relationships.
