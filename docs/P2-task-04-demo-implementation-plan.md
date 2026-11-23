@@ -25,7 +25,7 @@ Each task has one reviewable outcome. Include the task's tests and public interf
 | P3-07 | Implement feed configuration storage | P3-03 | An enabled feed's URL, topic, interval, and next poll time persist. Duplicate and untrusted URLs are rejected. |
 | P3-08 | Implement subscription storage and lifecycle | P3-03 | Creation, topic changes, pause, resume, and removal persist with the proper activation time. |
 | P3-09 | Implement news matching | P3-08 | A news item matches only active subscriptions for its topic that were activated before it was published. |
-| P3-10 | Implement the delivery queue | P3-03 | Jobs and attempts persist. Multiple matching subscriptions can link to one job per item and destination. |
+| P3-10 | Implement the delivery queue | P3-03 | One job per item, channel, and destination persists its status, attempt count, latest error, and next retry time. |
 | P3-11 | Implement RSS checkpoint and catch-up | P3-06, P3-07, P3-09, P3-10 | The initial poll establishes a baseline. Each later page commits its checkpoint and jobs together, and recovery resumes at the last committed page. |
 | P3-12 | Implement the automatic feed scheduler | P3-11 | One polling cycle runs per due feed. Interval edits take effect, failures back off, and disabled or replaced feeds discard in-flight results. |
 | P3-13 | Integrate email over SMTP | P3-01 | A standalone adapter sends the expected message to Mailpit and classifies send failures. |
@@ -35,7 +35,7 @@ Each task has one reviewable outcome. Include the task's tests and public interf
 
 | ID | Task | Depends on | Completion check |
 | --- | --- | --- | --- |
-| P3-15 | Implement the session API | P3-04 | Demo accounts can sign in and out. The API resolves the current account and rejects missing or expired sessions. |
+| P3-15 | Implement JWT sign-in and sign-out | P3-04 | Sign-in issues a signed JWT cookie. The API resolves the current account and rejects invalid or expired tokens. Sign-out clears the cookie. |
 | P3-16 | Implement the topics API | P3-07, P3-15 | Signed-in users can list topics from enabled feeds. |
 | P3-17 | Implement the subscriptions API | P3-08, P3-16 | A user can manage their own subscriptions. Attempts to read or change another user's subscription fail. |
 | P3-18 | Implement the admin feeds API | P3-07, P3-15 | Admins can list feeds with poll health and create or update settings. Regular users are denied access. |
@@ -76,7 +76,7 @@ Run the Angular app, Fastify API and workers, and fake RSS process on the host. 
 
 ## API and access
 
-Use JSON over the same web origin. Angular uses the API for all settings and access decisions stay on the server. Demo accounts are provisioned at setup, with password hashes stored in SQLite. Use expiring sessions and HTTP-only cookies. Validate origins for state-changing browser requests, and use secure cookies for HTTPS deployments. Serialize stable error codes for Angular forms and exclude session data and credentials from response bodies and logs.
+Use JSON over the same web origin. Angular uses the API for all settings and access decisions stay on the server. Demo accounts are provisioned at setup, with password hashes stored in SQLite. Sign-in issues a short-lived, signed JWT in an HTTP-only cookie. The API verifies the configured algorithm, signature, issuer, audience, and expiry, then reads the current account and role using the subject. Sign-out clears the cookie. Tokens expire on their own, and there is no token revocation store. Validate origins for state-changing browser requests, and use secure cookies for HTTPS deployments. Serialize stable error codes for Angular forms and exclude tokens and credentials from response bodies and logs.
 
 | Routes | Contract |
 | --- | --- |
@@ -95,12 +95,12 @@ See the [database review](P2-task-04-database-review.md) for the table relations
 
 | Record | Fields and invariants |
 | --- | --- |
-| Accounts and sessions | User ID, email, password hash, and role. Session records expire and reference a user. |
-| Subscriptions | Owner, topic, activation time in UTC, and active, paused, or removed status. Retain references used for queued jobs. |
+| Accounts | User ID, email, password hash, and role. Authentication uses stateless JWTs. |
+| Subscriptions | Owner, topic, activation time in UTC, and active or paused status. Removal deletes the subscription. |
 | Feed settings and state | Source ID, normalized unique URL, publisher, topic, interval, enabled flag, last attempt and success times, next due time, and the latest processed publication timestamp. Keep a separate initialization marker for an empty initial response. |
-| Delivery jobs and attempts | Source and item identity, channel, destination, minimal message payload, matching subscription references, status, retry time, and attempts. Keep a unique key on source, item, channel, and destination. |
+| Delivery jobs | Source and item identity, channel, destination, minimal message payload, status, attempt count, latest error, and retry time. Keep a unique key on source, item, channel, and destination. |
 
-The source adapter returns validated news items and a way to fetch the next page. It has no access to users or subscriptions. Matching accepts the normalized news item and selects active subscriptions whose topic matches and whose activation time precedes the item's publication time. The worker sends through the registered channel adapter, passing a destination and common alert payload. The channel adapter reports success, retryable failure, or permanent failure. Keep RSS and SMTP details in their adapters. The demo registers only RSS and email.
+The source adapter returns validated news items and a way to fetch the next page. It has no access to users or subscriptions. Matching selects active subscriptions for the item's topic across all feeds and checks that activation precedes publication. The worker reuses that rule against current subscriptions for the queued recipient. It sends through the registered channel adapter, passing a destination and common alert payload. The channel adapter reports success, retryable failure, or permanent failure. Keep RSS and SMTP details in their adapters. The demo registers only RSS and email.
 
 Initialize a new feed from its latest valid item with no send. On later polls, fetch successive pages after the saved item timestamp through an upper bound fixed at the start of that polling cycle. Commit each page's jobs and new checkpoint atomically. A process failure resumes from that last commit. Keep older or unmatched articles out of the database. A failed SMTP send leaves a job available for retry with bounded backoff. Recheck topic, activation, and destination before attempting the send.
 

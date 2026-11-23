@@ -180,3 +180,13 @@ Analzize my requirements, and if what I said doesnt make sense let me know, and 
 ```
 
 Recommendation pending confirmation: remove per-attempt history, use expiring signed JWTs without stored sessions, and recheck current subscription eligibility for the job's recipient without retaining a subscription link table. Keep a small delivery job record per item, channel, and destination so the service can send promptly and recover individual failed sends without replaying the whole batch. The open questions are delivery durability, JWT logout behavior, and topic-only versus feed-specific matching in the demo.
+
+## Phase 2 Database simplification decisions
+
+```text
+1. yes, for this porpuse it can stay.
+2. yes, we dont need server side revocation
+3. choose the simpler one for now
+```
+
+Decision: keep a small delivery job table, store the retry summary on each job, use expiring JWTs without server-side session or revocation storage, and match subscriptions by topic across feeds. The [database review](P2-task-04-database-review.md) describes the four-table schema and how the worker rechecks current eligibility.

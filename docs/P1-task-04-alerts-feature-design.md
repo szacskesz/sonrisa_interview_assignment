@@ -9,7 +9,7 @@ The first milestone is a working demo that turns a new headline from the fake RS
 | Area | Phase 1 decision | Reason and tradeoff |
 | --- | --- | --- |
 | Users | Start with provisioned user and admin accounts. Users can create, edit, pause, resume, and remove their own topic subscriptions. | Exercises account separation and the alert workflow. Self-service registration and account recovery are follow-up work. |
-| Importance | An eligible news item matches an active subscription to its configured feed topic. | A topic match is predictable and testable. Editorial urgency can be a separate rule when a source provides it. |
+| Importance | An eligible news item matches an active subscription to its topic across enabled feeds. | A topic match is predictable and testable. Editorial urgency can be a separate rule when a source provides it. |
 | Sources | The fake Node.js RSS server supplies the demo through the real RSS adapter. Admins can configure multiple feed URLs, and the demo uses one fake feed. | An independent source and real HTTP polling demonstrate the integration without provider credentials or published content. |
 | Destinations | Send email to the user's provisioned address through Nodemailer and SMTP. Use Mailpit as the demo inbox. | Reviewers can inspect the received email without an external account or credentials. |
 | Administration | Admins manage RSS URLs, topics, enabled status, and polling intervals. They can also view source health, last attempts and successful polls, and delivery outcomes. | Feed configuration is shared across the application. Poll status and email job history provide enough evidence for the demo. |
@@ -35,18 +35,18 @@ Use one Node.js application with an HTTP API, source scheduler, and delivery wor
 
 | Module | Responsibility |
 | --- | --- |
-| Accounts and settings | Manage users, roles, sessions, and authorized destination references. |
-| Subscriptions | Manage saved rules, active or paused state, and selected destinations. Match typed events against those rules. |
+| Accounts and settings | Manage users, roles, JWT sign-in, and provisioned email destinations. |
+| Subscriptions | Manage topic rules and active or paused state. Match typed events against those rules. |
 | Event sources | Own provider requests and credentials, payload validation, source checkpoints, and conversion to common events. |
 | Ingestion | Evaluate new events in memory. Save the feed checkpoint and any resulting email jobs in one transaction. |
 | Notification delivery | Resolve the registered adapter by channel, format alerts, send them, and record outcomes and retries. Adapters receive an authorized destination and a channel-neutral alert. |
 | Admin | Manage RSS feed configuration through protected API routes and inspect poll status and delivery records. |
 
-A normalized event has a source ID, provider event ID, event type, occurrence time, title, and source link when available. The demo adds typed news details such as topic and publisher. User rules and destination references stay with subscriptions. Source adapters have no account access, and delivery adapters have no dependency on source payloads or subscription rules.
+A normalized event has a source ID, provider event ID, event type, occurrence time, title, and source link when available. The demo adds typed news details such as topic and publisher. Subscriptions hold the rules, and the email destination comes from the account. Source adapters have no account access, and delivery adapters have no dependency on source payloads or subscription rules.
 
 Register the RSS source adapter with the scheduler and the SMTP adapter with the delivery worker at startup. Keep the contracts small and verify them with test doubles. A future source that emits news uses the existing rules. A new event type adds its own fields and matcher. Slack can register a second channel adapter that validates a destination, formats the common alert, and posts it over HTTPS. It can reuse the existing delivery job lifecycle.
 
-Keep one delivery job per source, item ID, and destination so overlapping subscriptions to the same email address do not create duplicate messages. Store the minimum details needed to send, retry, and show the delivery result, including the matched subscription references. Before sending a queued job, check that at least one matching subscription is still active for that topic and destination and that the item was published after its latest activation. A provider call already in progress can finish after a pause. SQLite has no RSS article archive or per-item seen history.
+Keep one delivery job per source, item ID, channel, and destination so overlapping subscriptions to the same email address do not create duplicate messages. Save each job with its retry state, attempt count, and latest error. Before sending or retrying, check whether the recipient currently has an active subscription to the item's topic and whether the item was published after that subscription's activation. A provider call already in progress can finish after a pause. SQLite has no RSS article archive or per-item seen history.
 
 Keep network calls outside database transactions. Retry transient failures with bounded backoff and surface permanent failures in admin. A timeout or crash after SMTP acceptance can still cause a duplicate on retry. The demo shows acceptance by recording a successful send in the app and displaying the email in Mailpit.
 
@@ -120,7 +120,7 @@ SQLite supplies the transaction and uniqueness constraints for the demo. The fix
 1. A user can create, edit, pause, resume, and remove their own topic subscription. The email destination defaults to their provisioned address. Settings and activation times survive restart. A regular user is denied access to another user's subscriptions and admin APIs.
 2. A new fake RSS item triggers active subscriptions for its topic when published after their latest activation. The first poll stores only the newest valid timestamp, creating no news records or email jobs. Unrelated items, paused subscriptions, and items published before or at activation produce no jobs. Repeated fetches and overlapping subscriptions produce one job per event and email destination.
 3. With the app closed in the user's browser, a matching alert reaches the SMTP inbox for the provisioned recipient. The received message includes the exact synthetic headline, topic, and source label. The admin view shows its delivery result.
-4. Pending jobs survive restart. Transient failures retry within the configured limit and permanent failures are visible. Administrators can inspect source health and delivery attempts. Credentials stay server-side.
+4. Pending jobs survive restart. Transient failures retry within the configured limit and permanent failures are visible. Administrators can inspect source health and each job's attempt count and latest error. Credentials stay server-side.
 5. Test doubles verify that source input and delivery are replaceable at the adapter boundaries. Unit and end-to-end tests cover supported workflows and failure cases using deterministic inputs.
 6. An admin can add and disable feeds and change each feed's interval. A duplicate URL and configuration changes from regular users are rejected. Multiple subscriptions share one polling cycle for that URL. Restart retains the schedule and checkpoint. After downtime, the app processes every eligible missed item from the saved checkpoint. A failed batch leaves the last committed checkpoint intact, so retry neither skips items nor duplicates their jobs.
 7. The fake RSS endpoint produces one item per UTC minute with the expected headline and a stable GUID. An end-to-end test advances the fixture and scheduler clocks, verifies delivery of the new headline, and verifies that a repeated fetch produces no duplicate.

@@ -9,21 +9,11 @@ CREATE TABLE users (
     created_at_ms INTEGER NOT NULL
 ) STRICT;
 
-CREATE TABLE sessions (
-    token_hash BLOB PRIMARY KEY NOT NULL CHECK (length(token_hash) = 32),
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at_ms INTEGER NOT NULL,
-    expires_at_ms INTEGER NOT NULL CHECK (expires_at_ms > created_at_ms)
-) STRICT;
-
-CREATE INDEX sessions_by_user ON sessions (user_id);
-CREATE INDEX sessions_by_expiry ON sessions (expires_at_ms);
-
 CREATE TABLE subscriptions (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
     topic TEXT NOT NULL CHECK (length(trim(topic)) > 0),
-    status TEXT NOT NULL CHECK (status IN ('active', 'paused', 'removed')),
+    status TEXT NOT NULL CHECK (status IN ('active', 'paused')),
     created_at_ms INTEGER NOT NULL,
     activated_at_ms INTEGER NOT NULL CHECK (activated_at_ms >= created_at_ms)
 ) STRICT;
@@ -65,6 +55,8 @@ CREATE TABLE delivery_jobs (
     item_url TEXT,
     published_at_ms INTEGER NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'canceled')),
+    attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+    last_error TEXT,
     created_at_ms INTEGER NOT NULL,
     next_attempt_at_ms INTEGER,
     sent_at_ms INTEGER,
@@ -75,25 +67,3 @@ CREATE TABLE delivery_jobs (
 
 CREATE INDEX pending_jobs_by_next_attempt
     ON delivery_jobs (next_attempt_at_ms, id) WHERE status = 'pending';
-
-CREATE TABLE delivery_job_subscriptions (
-    job_id INTEGER NOT NULL REFERENCES delivery_jobs(id) ON DELETE CASCADE,
-    subscription_id INTEGER NOT NULL REFERENCES subscriptions(id),
-    PRIMARY KEY (job_id, subscription_id)
-) STRICT;
-
-CREATE INDEX delivery_matches_by_subscription
-    ON delivery_job_subscriptions (subscription_id);
-
-CREATE TABLE delivery_attempts (
-    job_id INTEGER NOT NULL REFERENCES delivery_jobs(id) ON DELETE CASCADE,
-    attempt_no INTEGER NOT NULL CHECK (attempt_no > 0),
-    started_at_ms INTEGER NOT NULL,
-    finished_at_ms INTEGER,
-    outcome TEXT NOT NULL CHECK (
-        outcome IN ('started', 'accepted', 'retryable_failure', 'permanent_failure', 'unknown')
-    ),
-    error_detail TEXT,
-    PRIMARY KEY (job_id, attempt_no),
-    CHECK ((outcome = 'started') = (finished_at_ms IS NULL))
-) STRICT;
