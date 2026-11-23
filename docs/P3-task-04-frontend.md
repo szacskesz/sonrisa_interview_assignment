@@ -23,4 +23,6 @@ The sign-in page uses Signal Forms. The shell shows navigation for the current a
 
 The subscriptions page shows the provisioned email, topic, current status, and activation time in UTC. Add and edit use a topic dialog. Pause and resume apply immediately, and removal asks for confirmation. Existing subscriptions remain visible when no feed offers their topic.
 
+The RSS feeds page lets admins add, edit, enable, and disable feeds. It refreshes poll health every five seconds while open and shows the last success, failed attempt details, and next poll time in UTC.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)

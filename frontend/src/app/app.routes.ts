@@ -8,7 +8,10 @@ export const routes: Routes = [
     path: 'subscriptions', title: 'Subscriptions', canActivate: [requireRole('user')],
     loadComponent: () => import('./subscriptions/subscriptions-page/subscriptions-page').then((module) => module.SubscriptionsPage),
   },
-  { path: 'admin/feeds', title: 'RSS feeds', canActivate: [requireRole('admin')], component: RouteState },
+  {
+    path: 'admin/feeds', title: 'RSS feeds', canActivate: [requireRole('admin')],
+    loadComponent: () => import('./admin/feeds-page/feeds-page').then((module) => module.FeedsPage),
+  },
   { path: 'admin/deliveries', title: 'Deliveries', canActivate: [requireRole('admin')], component: RouteState },
   { path: 'access-denied', title: 'Access denied', component: RouteState },
   { path: '', pathMatch: 'full', redirectTo: '/sign-in' },

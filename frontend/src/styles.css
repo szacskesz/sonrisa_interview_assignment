@@ -51,7 +51,7 @@ button:disabled { cursor: default; opacity: .55; }
 .danger.primary { background: #862f36; border-color: #862f36; color: white; }
 form label { display: grid; gap: 4px; margin-bottom: 10px; font-size: .9rem; font-weight: 600; }
 input, select { width: 100%; min-width: 0; border: 1px solid #aeb9c7; border-radius: 5px; background: white; color: inherit; padding: 7px 9px; }
-[aria-invalid='true'] { border-color: #862f36; }
+[aria-invalid='true'], .input-error { border-color: #862f36; }
 .inline-error { color: #862f36; font-size: .87rem; margin: 4px 0 9px; }
 .state-panel, .notice { padding: 16px; border: 1px solid #ccd6e4; border-radius: 7px; background: #f4f7fb; }
 .state-panel p, .state-panel button { margin-top: 6px; }
@@ -70,8 +70,14 @@ th:last-child { border-radius: 0 7px 0 0; }
 td { padding: 11px 12px; border-top: 1px solid #e1e5ea; vertical-align: top; overflow-wrap: anywhere; }
 td small { display: block; margin-top: 3px; line-height: 1.4; }
 .subscriptions-table col:nth-child(1), .subscriptions-table col:nth-child(4) { width: 28%; }
+.feeds-table col:nth-child(1) { width: 32%; }
+.feeds-table col:nth-child(3) { width: 28%; }
 .badge { display: inline-block; padding: 2px 7px; background: #eef1f5; border: 1px solid #ccd5df; border-radius: 5px; font-size: .8rem; white-space: nowrap; }
 .badge.good { color: #245645; background: #eaf4ee; border-color: #c1dbcc; }
+.badge.bad { color: #792b35; background: #fbeced; border-color: #e9c7cb; }
+.feed-hint { margin: -5px 0 10px; }
+.checkbox { display: flex; align-items: center; gap: 8px; }
+input[type='checkbox'] { width: auto; }
 dialog { width: min(470px, calc(100vw - 24px)); padding: 21px; border: 1px solid #aeb9c7; border-radius: 9px; color: inherit; }
 dialog::backdrop { background: #1d293860; }
 dialog h2 { margin-bottom: 7px; }

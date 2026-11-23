@@ -1,0 +1,77 @@
+<div class="screen-heading">
+  <h1>RSS feeds</h1>
+  <button type="button" class="primary" [disabled]="loading() || pending() || !!loadError()" (click)="openEditor()">Add feed</button>
+</div>
+@if (feedback(); as message) { <p class="notice" role="status">{{ message }}</p> }
+@if (actionError() || refreshError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+@if (loading()) {
+  <p class="state-panel" role="status">Loading RSS feeds…</p>
+} @else if (loadError(); as message) {
+  <section class="state-panel">
+    <h2>RSS feeds unavailable</h2>
+    <p role="alert">{{ message }}</p>
+    <button type="button" (click)="load()">Try again</button>
+  </section>
+} @else if (rows().length === 0) {
+  <section class="state-panel"><h2>No RSS feeds yet</h2><p>Add a trusted demo RSS feed to offer its topic to subscribers.</p></section>
+} @else {
+  <div class="table-frame">
+    <table class="feeds-table" aria-label="Configured RSS feeds" role="table">
+      <colgroup><col><col><col><col></colgroup>
+      <thead role="rowgroup"><tr role="row">
+        <th scope="col" role="columnheader">Feed</th><th scope="col" role="columnheader">Topic and interval</th>
+        <th scope="col" role="columnheader">Poll health (UTC)</th><th scope="col" role="columnheader">Actions</th>
+      </tr></thead>
+      <tbody role="rowgroup">
+        @for (row of rows(); track row.id) {
+          <tr role="row">
+            <td role="cell" data-label="Feed"><div><strong>{{ row.publisher }}</strong><small class="secondary">{{ row.url }}</small></div></td>
+            <td role="cell" data-label="Topic and interval"><div>{{ row.topic }}<small class="secondary">Every {{ row.pollIntervalSeconds }} seconds</small></div></td>
+            <td role="cell" data-label="Poll health (UTC)">
+              <div>
+                @let status = health(row);
+                <span class="badge" [class.good]="status === 'Healthy'" [class.bad]="status === 'Poll failed'">{{ status }}</span>
+                @if (row.lastPollSuccessAt !== null) {
+                  <small class="secondary">Last success {{ row.lastPollSuccessAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }}</small>
+                } @else {
+                  <small class="secondary">No successful poll yet</small>
+                }
+                @if (row.lastPollError) {
+                  <small class="inline-error">Last attempt {{ row.lastPollAttemptAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }} · {{ row.lastPollError }}</small>
+                }
+                @if (row.enabled) {
+                  <small class="secondary">Next poll {{ row.nextPollAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }}</small>
+                }
+              </div>
+            </td>
+            <td role="cell" data-label="Actions"><div class="actions">
+              <button type="button" [disabled]="pending()" (click)="openEditor(row)">Edit</button>
+              <button type="button" [disabled]="pending()" (click)="toggle(row)">{{ row.enabled ? 'Disable' : 'Enable' }}</button>
+            </div></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<dialog #feedDialog aria-labelledby="feed-title" (cancel)="cancel($event)">
+  <h2 id="feed-title">{{ editing() === null ? 'Add feed' : 'Edit feed' }}</h2>
+  <form novalidate (submit)="save($event)">
+    <label>Feed URL <input type="url" [formField]="editor.url"
+      [class.input-error]="dialogError()?.code?.endsWith('_feed_url')" aria-describedby="feed-hint feed-error" /></label>
+    <p class="secondary feed-hint" id="feed-hint">Use a configured demo feed URL.</p>
+    <label>Publisher <input [formField]="editor.publisher" /></label>
+    <label>Topic <input [formField]="editor.topic" /></label>
+    <label>Polling interval (seconds) <input type="number" step="1" [formField]="editor.pollIntervalSeconds" /></label>
+    <label class="checkbox"><input type="checkbox" [formField]="editor.enabled" /> Enabled</label>
+    @if (dialogError(); as failure) { <p class="inline-error" id="feed-error" role="alert">{{ failure.message }}</p> }
+    @if (editor().touched() && editor().invalid()) {
+      <p class="inline-error" role="alert">Enter a valid feed URL, publisher, topic, and a positive whole number of seconds.</p>
+    }
+    <div class="form-actions">
+      <button type="button" [disabled]="pending()" (click)="cancel()">Cancel</button>
+      <button class="primary" [disabled]="pending()">Save feed</button>
+    </div>
+  </form>
+</dialog>
