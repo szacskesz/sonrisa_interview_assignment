@@ -12,6 +12,10 @@ export function createDeliveryQueue(database) {
     SELECT * FROM delivery_jobs WHERE status = 'pending' AND next_attempt_at_ms <= ?
     ORDER BY next_attempt_at_ms, id LIMIT 1
   `);
+  const recent = database.prepare(`
+    SELECT id, title, publisher, status, attempt_count, last_error
+    FROM delivery_jobs ORDER BY id DESC LIMIT 100
+  `);
   const claim = database.prepare(`
     UPDATE delivery_jobs SET status = 'sending', attempt_count = attempt_count + 1, next_attempt_at_ms = NULL
     WHERE id = ? AND status = 'pending' AND next_attempt_at_ms <= ? RETURNING *
@@ -31,6 +35,7 @@ export function createDeliveryQueue(database) {
     WHERE status = 'sending'
   `);
   return {
+    recent: () => recent.all(),
     enqueue({ feedId, sourceUrl, itemId, channel, destination, title, topic, publisher, itemUrl, publishedAt }, now) {
       return insert.run(feedId, sourceUrl, itemId, channel, destination, title, topic, publisher,
         itemUrl ?? null, publishedAt, now, now).changes > 0;

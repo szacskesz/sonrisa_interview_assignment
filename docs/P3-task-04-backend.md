@@ -46,6 +46,8 @@ The matcher returns distinct account emails for active subscriptions whose topic
 
 The queue deduplicates by feed, source URL, item ID, channel, and destination. Each job carries the message and its current outcome. Claiming due work records the attempt, and updates from an older attempt cannot overwrite a newer one. On startup the worker can recover interrupted attempts as pending. A send accepted just before an interruption can be retried.
 
+`GET /api/admin/deliveries` returns `{deliveries}` with up to 100 jobs, most recently queued first. Each record includes `id`, `title`, `publisher`, `status`, `attemptCount`, and `lastError`. The two admin endpoints require the admin role.
+
 The email channel sends a plain-text alert with the headline as subject and the headline, topic, source, and optional item URL in the body. It reports success, retryable failure, or permanent failure without storing SMTP response text. With Mailpit running, set `TEST_MAILPIT_URL=http://127.0.0.1:18025` and run the backend tests to include the real SMTP and inbox check.
 
 The API process checks for due deliveries once per second. The worker cancels a job whose recipient no longer matches the subscription rules. It retries temporary failures up to five total attempts with exponential backoff starting at five seconds, and records permanent failures immediately. The local SMTP defaults are `127.0.0.1:11025` and sender `alerts@example.test`. Change them with `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM`.
