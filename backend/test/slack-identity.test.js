@@ -39,11 +39,17 @@ test('validates Slack signature and claims before returning only the workspace a
   await assert.rejects(client.exchange('code', 'nonce'), /signature verification failed/);
 });
 
-test('requires a complete configuration and the exact HTTPS redirect on the application origin', () => {
+test('requires the exact callback on the application origin, with HTTP allowed only on localhost', () => {
   const env = { SLACK_BOT_TOKEN: 'bot', SLACK_CLIENT_ID: 'client', SLACK_CLIENT_SECRET: 'secret',
     SLACK_WORKSPACE_ID: 'T123', SLACK_REDIRECT_URL: 'https://alerts.example.test/api/slack/callback' };
   assert.equal(slackConfiguration({ SLACK_BOT_TOKEN: 'bot' }), undefined);
   assert.equal(slackConfiguration(env, 'https://alerts.example.test').workspaceId, 'T123');
-  assert.throws(() => slackConfiguration(env, 'http://alerts.example.test'), /HTTPS/);
+  const localhost = 'http://localhost:4200';
+  const localRedirect = `${localhost}/api/slack/callback`;
+  assert.equal(slackConfiguration({ ...env, SLACK_REDIRECT_URL: localRedirect }, localhost).redirectUrl, localRedirect);
+  for (const origin of ['http://alerts.example.test', 'http://localhost.example.test', 'http://alerts.example.test@localhost']) {
+    assert.throws(() => slackConfiguration({ ...env, SLACK_REDIRECT_URL: `${origin}/api/slack/callback` }, origin), /HTTPS/);
+  }
+  assert.throws(() => slackConfiguration({ ...env, SLACK_REDIRECT_URL: `${localhost}/other` }, localhost), /callback/);
   assert.throws(() => slackConfiguration(env, 'https://other.example.test'), /HTTPS/);
 });

@@ -6,14 +6,16 @@ const memberClaim = `${issuer}/user_id`;
 const workspacePattern = /^T[A-Z0-9]{1,63}$/;
 const memberPattern = /^[UW][A-Z0-9]{1,63}$/;
 
-/** Read optional single-workspace configuration and enforce a same-origin HTTPS callback. */
+/** Read optional Slack settings and allow HTTP callbacks only for localhost development. */
 export function slackConfiguration(env, webOrigin) {
   const { SLACK_BOT_TOKEN: botToken, SLACK_CLIENT_ID: clientId, SLACK_CLIENT_SECRET: clientSecret,
     SLACK_WORKSPACE_ID: workspaceId, SLACK_REDIRECT_URL: redirectUrl } = env;
   if (![botToken, clientId, clientSecret, workspaceId, redirectUrl].every(Boolean)) return undefined;
-  if (!workspacePattern.test(workspaceId) || redirectUrl !== `${webOrigin}/api/slack/callback` ||
-      new URL(redirectUrl).protocol !== 'https:') {
-    throw new Error('Set SLACK_WORKSPACE_ID and an HTTPS SLACK_REDIRECT_URL on WEB_ORIGIN at /api/slack/callback');
+  const origin = URL.parse(webOrigin);
+  const localHttp = origin?.protocol === 'http:' && origin.hostname === 'localhost';
+  if (!workspacePattern.test(workspaceId) || origin?.origin !== webOrigin ||
+      redirectUrl !== `${webOrigin}/api/slack/callback` || (origin?.protocol !== 'https:' && !localHttp)) {
+    throw new Error('Set a valid SLACK_WORKSPACE_ID and use WEB_ORIGIN plus /api/slack/callback for SLACK_REDIRECT_URL. HTTPS is required except on localhost.');
   }
   return { botToken, clientId, clientSecret, workspaceId, redirectUrl };
 }

@@ -67,7 +67,8 @@ export const test = base.extend({
       });
       server.listen(0, '127.0.0.1');
       await once(server, 'listening');
-      const url = `http://127.0.0.1:${server.address().port}`;
+      const host = simulateSlack ? 'localhost' : '127.0.0.1';
+      const url = `http://${host}:${server.address().port}`;
       const suffix = randomUUID();
       const admin = `admin-${suffix}@example.test`;
       const user = `user-${suffix}@example.test`;
@@ -87,7 +88,7 @@ export const test = base.extend({
       const slackIdentity = simulateSlack ? {
         workspaceId: 'TDEMO',
         authorize(state) {
-          const consent = new URL(`http://localhost:${server.address().port}/test/slack/authorize`);
+          const consent = new URL(`http://127.0.0.1:${server.address().port}/test/slack/authorize`);
           consent.searchParams.set('state', state);
           return consent.href;
         },
@@ -149,7 +150,12 @@ export const test = base.extend({
       });
     } finally {
       try {
-        if (server?.listening) await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+        if (server?.listening) {
+          await new Promise((resolve, reject) => {
+            server.close((error) => error ? reject(error) : resolve());
+            server.closeAllConnections();
+          });
+        }
         await app?.close();
       } finally {
         try {
