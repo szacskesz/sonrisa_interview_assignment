@@ -26,12 +26,17 @@ export const test = base.extend({
     const directory = await mkdtemp(join(tmpdir(), 'alerts-browser-'));
     let time = initialTime;
     let app;
-    let feed;
+    const feeds = [];
     let server;
     try {
       await mailpit('/api/v1/messages?limit=1');
       const now = () => time;
-      feed = await startObservedFeed(now);
+      const addFeed = async () => {
+        const feed = await startObservedFeed(now);
+        feeds.push(feed);
+        return feed;
+      };
+      const feed = await addFeed();
       server = createServer((request, response) => {
         const { pathname } = new URL(request.url, 'http://127.0.0.1');
         if (pathname.startsWith('/api/')) {
@@ -67,7 +72,7 @@ export const test = base.extend({
       const open = async (startBackground) => {
         app = createApp({
           databasePath: join(directory, 'alerts.sqlite'), jwtSecret,
-          trustedUrls: [feed.url], webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
+          trustedUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
         });
         await app.ready();
       };
@@ -79,7 +84,7 @@ export const test = base.extend({
         DEMO_ADMIN_EMAIL: admin, DEMO_ADMIN_PASSWORD: password, DEMO_USER_EMAIL: lateUser, DEMO_USER_PASSWORD: password,
       });
       await use({
-        url, admin, user, lateUser, password, feedUrl: feed.url, feed, now,
+        url, admin, user, lateUser, password, feedUrl: feed.url, feed, addFeed, now,
         advance(milliseconds) { time += milliseconds; },
         async stop() {
           const current = app;
@@ -102,8 +107,11 @@ export const test = base.extend({
         if (server?.listening) await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
         await app?.close();
       } finally {
-        await feed?.close();
-        await rm(directory, { recursive: true, force: true });
+        try {
+          await Promise.all(feeds.map((feed) => feed.close()));
+        } finally {
+          await rm(directory, { recursive: true, force: true });
+        }
       }
     }
   },

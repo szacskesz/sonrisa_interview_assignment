@@ -57,3 +57,58 @@ test('E3 resumes at the committed checkpoint after a replay page returns HTTP 50
     await Promise.all([admin.dispose(), user.dispose()]);
   }
 });
+
+test('E1 polls each feed once per cycle as subscribers grow and routes alerts by topic', async ({ demo }) => {
+  await demo.stop();
+  const second = await demo.addFeed();
+  const third = await demo.addFeed();
+  await demo.start();
+  const admin = await account(demo, demo.admin);
+  const user = await account(demo, demo.user);
+  const other = await account(demo, demo.lateUser);
+
+  async function inbox(address) {
+    const messages = await demo.messages(address);
+    return (await Promise.all(messages.map(async ({ ID, Subject }) => {
+      const { Text } = await demo.message(ID);
+      const source = Text.split(/\r?\n/).find((line) => line.startsWith('Source: '));
+      return `${Subject} | ${source}`;
+    }))).sort();
+  }
+
+  try {
+    const start = demo.now();
+    await configureFeed(demo, admin, { publisher: 'World A' });
+    await configureFeed(demo, admin, { url: second.url, publisher: 'World B' });
+    await configureFeed(demo, admin, { url: third.url, publisher: 'Markets C', topic: 'Markets' });
+    await demo.poll();
+    await subscribe(user);
+    demo.advance(minute);
+    await demo.poll();
+    await demo.deliver();
+    const world = (headline) => [`${headline} | Source: World A`, `${headline} | Source: World B`];
+    const first = title(demo.now());
+    expect(await inbox(demo.user)).toEqual(world(first));
+    expect(await inbox(demo.lateUser)).toEqual([]);
+
+    await subscribe(other);
+    await subscribe(other, 'Markets');
+    demo.advance(minute);
+    await demo.poll();
+    await demo.deliver();
+    const next = title(demo.now());
+    expect(await inbox(demo.user)).toEqual([...world(first), ...world(next)]);
+    expect(await inbox(demo.lateUser)).toEqual([`${next} | Source: Markets C`, ...world(next)]);
+
+    const iso = (offset) => new Date(start + offset * minute).toISOString();
+    for (const feed of [demo.feed, second, third]) {
+      expect(feed.requests).toEqual([
+        { after: null, through: null },
+        { after: null, through: null }, { after: iso(0), through: iso(1) },
+        { after: null, through: null }, { after: iso(1), through: iso(2) },
+      ]);
+    }
+  } finally {
+    await Promise.all([admin.dispose(), user.dispose(), other.dispose()]);
+  }
+});
