@@ -13,7 +13,7 @@
     <button type="button" (click)="load()">Try again</button>
   </section>
 } @else if (rows().length === 0) {
-  <section class="state-panel"><h2>No RSS feeds yet</h2><p>Add a trusted demo RSS feed to offer its topic to subscribers.</p></section>
+  <section class="state-panel"><h2>No RSS feeds yet</h2><p>Add an RSS feed to offer its topic to subscribers.</p></section>
 } @else {
   <div class="table-frame">
     <table class="feeds-table" aria-label="Configured RSS feeds" role="table">
@@ -60,7 +60,7 @@
   <form novalidate (submit)="save($event)">
     <label>Feed URL <input type="url" [formField]="editor.url"
       [class.input-error]="dialogError()?.code?.endsWith('_feed_url')" aria-describedby="feed-hint feed-error" /></label>
-    <p class="secondary feed-hint" id="feed-hint">Use a configured demo feed URL.</p>
+    <p class="secondary feed-hint" id="feed-hint">Enter the RSS feed URL, including any query parameters.</p>
     <label>Publisher <input [formField]="editor.publisher" /></label>
     <label>Topic <input [formField]="editor.topic" /></label>
     <label>Polling interval (seconds) <input type="number" step="1" [formField]="editor.pollIntervalSeconds" /></label>

@@ -7,7 +7,7 @@ const app = createApp({
   startBackground: true,
   jwtSecret: process.env.JWT_SECRET ?? '',
   webOrigin: process.env.WEB_ORIGIN,
-  trustedUrls: process.env.TRUSTED_RSS_URLS?.split(',').map((url) => url.trim()),
+  fixtureUrls: (process.env.FIXTURE_RSS_URLS ?? process.env.TRUSTED_RSS_URLS)?.split(',').map((url) => url.trim()),
   channels: new Map([['email', createEmailChannel({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT ?? 11025),

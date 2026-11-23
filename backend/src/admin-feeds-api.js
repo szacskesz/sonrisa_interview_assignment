@@ -31,7 +31,7 @@ function withFeedValidation(update) {
   }
 }
 
-/** Let admins list poll health and create or edit trusted RSS feeds. */
+/** Let admins list poll health and create or edit RSS feeds. */
 export function configureAdminFeedsApi(app) {
   const onRequest = app.requireAdmin;
   app.get('/api/admin/feeds', { onRequest }, async () => ({

@@ -29,9 +29,13 @@ test('exposes feed settings and recent poll health to administrators only', asyn
     [true, null, 100, 120]);
 });
 
-test('rejects untrusted and duplicate URLs, malformed settings and absent feed IDs', async (t) => {
+test('accepts public URLs with query parameters and rejects duplicate URLs and bad settings', async (t) => {
   const { request } = await createApiFixture(t);
-  assert.equal((await request(1, 'POST', path, { ...settings, url: 'https://rss.example.test/feed' })).json().code, 'untrusted_feed_url');
+  const googleUrl = 'https://news.google.com/rss?hl=hu&gl=HU&ceid=HU:hu';
+  const google = await request(1, 'POST', path, { ...settings, url: googleUrl });
+  assert.equal(google.statusCode, 201);
+  assert.equal(google.json().url, googleUrl);
+  assert.equal((await request(1, 'POST', path, { ...settings, url: 'file:///feed.xml' })).json().code, 'invalid_feed_url');
   assert.equal((await request(1, 'POST', path, { ...settings, topic: '  ' })).json().code, 'invalid_feed_settings');
   assert.equal((await request(1, 'POST', path, { ...settings, pollIntervalSeconds: 1.5 })).statusCode, 400);
   assert.equal((await request(1, 'POST', path, settings)).statusCode, 201);

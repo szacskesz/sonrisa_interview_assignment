@@ -43,7 +43,6 @@ test('discards in-flight data after disable and re-enable or an RSS URL replacem
   let snapshot = Promise.withResolvers();
   const app = createApp({
     now: () => 30,
-    trustedUrls: [defaultFixtureUrl, backup],
     sourceFor: () => ({ latest: () => snapshot.promise }),
   });
   t.after(() => app.close());

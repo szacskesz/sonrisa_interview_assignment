@@ -29,7 +29,8 @@ export function transaction(database, work) {
   }
 }
 
-const migrations = [new URL('./migrations/001-initial.sql', import.meta.url)];
+const migrations = ['001-initial.sql', '002-rss-snapshot.sql']
+  .map((file) => new URL(`./migrations/${file}`, import.meta.url));
 
 /** Apply committed migrations in order while preserving existing application data. */
 export function migrateDatabase(database) {

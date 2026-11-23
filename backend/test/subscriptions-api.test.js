@@ -6,7 +6,7 @@ import { createApiFixture } from '../test-support/api.js';
 test('creates, edits, pauses, resumes and removes subscriptions for the signed-in owner', async (t) => {
   let time = 100;
   const markets = 'http://127.0.0.1:18081/rss.xml';
-  const { app, request } = await createApiFixture(t, { now: () => time, trustedUrls: [defaultFixtureUrl, markets] });
+  const { app, request } = await createApiFixture(t, { now: () => time });
   const feeds = app.services.feeds;
   feeds.create({ url: defaultFixtureUrl, publisher: 'Fixture', topic: 'World' });
   const alternate = feeds.create({ url: markets, publisher: 'Fixture', topic: 'Markets' });

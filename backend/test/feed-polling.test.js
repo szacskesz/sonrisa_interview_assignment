@@ -9,17 +9,17 @@ import { createDeliveryQueue } from '../src/delivery-jobs.js';
 import { createFeedPoller } from '../src/feed-polling.js';
 import { createFeedStore, defaultFixtureUrl } from '../src/feeds.js';
 import { createMatcher } from '../src/matching.js';
-import { createRssSource } from '../src/rss-source.js';
+import { createFixtureRssSource } from '../src/rss-source.js';
 
 const anchor = Date.parse('2026-11-23T09:02:00.000Z');
 
-function setup(database, url, options = {}) {
+function setup(database, options = {}) {
   migrateDatabase(database);
   const now = options.now ?? (() => anchor);
-  const feeds = createFeedStore(database, { trustedUrls: [url], now });
+  const feeds = createFeedStore(database, { now });
   const matcher = createMatcher(database);
   const queue = createDeliveryQueue(database);
-  const sourceFor = options.sourceFor ?? ((feed) => createRssSource(feed.url));
+  const sourceFor = options.sourceFor ?? ((feed) => createFixtureRssSource(feed.url));
   return { feeds, poll: createFeedPoller({ database, feeds, matcher, queue, sourceFor, now }) };
 }
 
@@ -36,7 +36,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
   let id;
   {
     using database = openDatabase(path);
-    const { feeds, poll } = setup(database, fixture.url);
+    const { feeds, poll } = setup(database);
     id = feeds.create(config(fixture.url)).id;
     database.exec(`
       INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0);
@@ -54,7 +54,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
   }
   {
     using database = openDatabase(path);
-    const { feeds, poll } = setup(database, fixture.url);
+    const { feeds, poll } = setup(database);
     database.exec(`
       DROP TRIGGER reject_batch;
       INSERT INTO users VALUES (2, 'late@example.test', 'hash', 'user', 0);
@@ -74,7 +74,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
 test('records a clean empty baseline, then imports articles published afterwards', async () => {
   using database = openDatabase(':memory:');
   let through = null;
-  const { feeds, poll } = setup(database, defaultFixtureUrl, { sourceFor: () => ({
+  const { feeds, poll } = setup(database, { sourceFor: () => ({
     latest: async () => through,
     page: async (after, upper) => {
       assert.equal(after, anchor);
@@ -92,4 +92,40 @@ test('records a clean empty baseline, then imports articles published afterwards
   through = anchor + minute;
   await poll(id);
   assert.equal(jobs(database)[0].published_at_ms, through);
+});
+
+test('imports newly visible public RSS items with tied and unordered dates, and skips historical or unchanged items', async () => {
+  using database = openDatabase(':memory:');
+  const url = 'https://example.test/rss?region=HU';
+  let time = anchor;
+  const item = (id, publishedAt) => ({ id, title: id, publishedAt });
+  const history = item('history', anchor - 1_000);
+  const future = item('future', anchor + 30_000);
+  let items = [history, item('old undated', null), future];
+  const options = { now: () => time, sourceFor: () => ({ snapshot: async () => items }) };
+  const { feeds, poll } = setup(database, options);
+  const { id } = feeds.create(config(url));
+  database.exec(`
+    INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0);
+    INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0);
+  `);
+  await poll(id);
+  assert.deepEqual(jobs(database), []);
+  const first = item('first', anchor + 20_000);
+  const sameTime = item('same time', anchor + 20_000);
+  const undated = item('new undated', null);
+  time += 40_000;
+  items = [future, first, history, sameTime, undated, item('stale discovery', anchor - 500)];
+  await poll(id);
+  await poll(id);
+  items = [];
+  await poll(id);
+  items = [sameTime, first, future, undated, item('later discovery', anchor + 15_000)];
+  await poll(id);
+  const sent = database.prepare('SELECT title, published_at_ms FROM delivery_jobs ORDER BY id').all();
+  assert.deepEqual(sent.map(({ title, published_at_ms }) => [title, published_at_ms]), [
+    ['future', future.publishedAt], ['first', first.publishedAt], ['same time', sameTime.publishedAt],
+    ['new undated', time], ['later discovery', anchor + 15_000],
+  ]);
+  assert.equal(JSON.parse(feeds.get(id).rss_snapshot_ids).length, items.length);
 });

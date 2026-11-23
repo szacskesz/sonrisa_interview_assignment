@@ -9,10 +9,11 @@ import { createDeliveryWorker } from './delivery-worker.js';
 import { createEmailChannel } from './email-channel.js';
 import { createFeedPoller } from './feed-polling.js';
 import { createFeedScheduler } from './feed-scheduler.js';
-import { createFeedStore } from './feeds.js';
+import { createFeedStore, defaultFixtureUrl } from './feeds.js';
 import { createMatcher } from './matching.js';
 import { startPeriodicTask } from './periodic-task.js';
-import { createRssSource } from './rss-source.js';
+import { normalizeRssUrl } from './rss-http.js';
+import { createFixtureRssSource, createRssSource } from './rss-source.js';
 import { configureSessionApi } from './session-api.js';
 import { configureSubscriptionsApi } from './subscriptions-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
@@ -20,10 +21,12 @@ import { configureTopicsApi } from './topics-api.js';
 
 /** Build the API for an HTTP listener or in-process request tests. */
 export function createApp({
-  databasePath = ':memory:', trustedUrls, now = Date.now, startBackground = false,
+  databasePath = ':memory:', fixtureUrls = [defaultFixtureUrl], now = Date.now, startBackground = false,
   jwtSecret = randomBytes(32).toString('hex'), webOrigin = 'http://127.0.0.1:4200',
-  sourceFor = ({ url }) => createRssSource(url), channels = new Map([['email', createEmailChannel()]]), ...options
+  sourceFor, channels = new Map([['email', createEmailChannel()]]), ...options
 } = {}) {
+  const fixtures = new Set(fixtureUrls.map((url) => normalizeRssUrl(url).href));
+  const selectSource = sourceFor ?? (({ url }) => fixtures.has(url) ? createFixtureRssSource(url) : createRssSource(url));
   const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } }, ...options });
   configureApiErrors(app);
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
@@ -42,11 +45,11 @@ export function createApp({
   app.addHook('onClose', async () => database.close());
   app.addHook('onReady', async () => {
     migrateDatabase(database);
-    const feeds = createFeedStore(database, { trustedUrls, now });
+    const feeds = createFeedStore(database, { now });
     const subscriptions = createSubscriptionStore(database, { now });
     const matcher = createMatcher(database);
     const queue = createDeliveryQueue(database);
-    const poll = createFeedPoller({ database, feeds, matcher, queue, sourceFor, now });
+    const poll = createFeedPoller({ database, feeds, matcher, queue, sourceFor: selectSource, now });
     const pollFeeds = createFeedScheduler({ database, feeds, poll, now });
     const worker = createDeliveryWorker({
       queue, channels, now,

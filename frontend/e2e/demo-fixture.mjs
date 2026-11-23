@@ -72,7 +72,7 @@ export const test = base.extend({
       const open = async (startBackground) => {
         app = createApp({
           databasePath: join(directory, 'alerts.sqlite'), jwtSecret,
-          trustedUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
+          fixtureUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
         });
         await app.ready();
       };
