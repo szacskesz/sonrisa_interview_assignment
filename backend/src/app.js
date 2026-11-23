@@ -15,6 +15,7 @@ import { startPeriodicTask } from './periodic-task.js';
 import { normalizeRssUrl } from './rss-http.js';
 import { createFixtureRssSource, createRssSource } from './rss-source.js';
 import { configureSessionApi } from './session-api.js';
+import { configureSlackApi } from './slack-api.js';
 import { configureSubscriptionsApi } from './subscriptions-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
 import { configureTopicsApi } from './topics-api.js';
@@ -24,7 +25,7 @@ import { createUsgsSource } from './usgs-source.js';
 export function createApp({
   databasePath = ':memory:', fixtureUrls = [defaultFixtureUrl], now = Date.now, startBackground = false,
   jwtSecret = randomBytes(32).toString('hex'), webOrigin = 'http://127.0.0.1:4200',
-  sourceFor, usgsFetch, channels = new Map([['email', createEmailChannel()]]), ...options
+  sourceFor, usgsFetch, slackIdentity, channels = new Map([['email', createEmailChannel()]]), ...options
 } = {}) {
   const fixtures = new Set(fixtureUrls.map((url) => normalizeRssUrl(url).href));
   const selectSource = sourceFor ?? (({ source_kind, url }) => {
@@ -34,6 +35,7 @@ export function createApp({
   const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } }, ...options });
   configureApiErrors(app);
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
+  configureSlackApi(app, { identity: slackIdentity, now });
   configureTopicsApi(app);
   configureSubscriptionsApi(app);
   configureAdminFeedsApi(app);

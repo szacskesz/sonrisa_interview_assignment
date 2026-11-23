@@ -1,12 +1,16 @@
 import { createApp } from './app.js';
 import { configuredDatabasePath } from './database.js';
 import { createEmailChannel } from './email-channel.js';
+import { createSlackIdentity, slackConfiguration } from './slack-identity.js';
+
+const slack = slackConfiguration(process.env, process.env.WEB_ORIGIN);
 
 const app = createApp({
   databasePath: configuredDatabasePath(),
   startBackground: true,
   jwtSecret: process.env.JWT_SECRET ?? '',
   webOrigin: process.env.WEB_ORIGIN,
+  slackIdentity: slack && createSlackIdentity(slack),
   fixtureUrls: (process.env.FIXTURE_RSS_URLS ?? process.env.TRUSTED_RSS_URLS)?.split(',').map((url) => url.trim()),
   channels: new Map([['email', createEmailChannel({
     host: process.env.SMTP_HOST,

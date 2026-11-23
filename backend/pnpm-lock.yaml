@@ -26,6 +26,9 @@ importers:
       ipaddr.js:
         specifier: 2.5.0
         version: 2.5.0
+      jose:
+        specifier: 6.2.18
+        version: 6.2.18
       nodemailer:
         specifier: 10.6.1
         version: 10.6.1
@@ -182,6 +185,9 @@ packages:
 
   is-unsafe@2.0.3:
     resolution: {integrity: sha512-ZBllczCCO267vgdFb6Tq3pv+LhHaCiGMdr+ZsuL+OopruAg7S+3ZDs1vD0RPC0uSrkjzbraxaGjtX1YBxjPeFQ==}
+
+  jose@6.2.18:
+    resolution: {integrity: sha512-doV4thUwgkrycJH4yLeqwTGIIZphHl+pk7CPReuMIhYhncmgzdko85MaCG4YQFTxqMFr1/oEH32tZuKKovcDEg==}
 
   json-schema-ref-resolver@3.0.1:
     resolution: {integrity: sha512-w+HwgljXpVwZ3IidoUR1qPZxSOQ+NRQWuVe6a5pe8XbHsNZE4UAwVPUvzZagn7yBKbJtt6UJnRFYbNTRPZI45Q==}
@@ -489,6 +495,8 @@ snapshots:
   ipaddr.js@2.5.0: {}
 
   is-unsafe@2.0.3: {}
+
+  jose@6.2.18: {}
 
   json-schema-ref-resolver@3.0.1:
     dependencies:
