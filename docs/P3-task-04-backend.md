@@ -1,6 +1,6 @@
 # Backend development
 
-Install and run the API from the repository root with Node.js 24 and pnpm.
+Install and run the API from the repository root with Node.js 24.15 or later in the Node 24 release line and pnpm.
 
 ```powershell
 pnpm --dir backend install --frozen-lockfile
@@ -28,7 +28,7 @@ Run `pnpm --dir backend fake-rss` in a separate terminal. By default it serves `
 
 The RSS adapter exposes `latest()` for the publication timestamp or an empty snapshot, and `page(after, through)` for normalized articles containing an ID, title, optional URL, and publication timestamp. The adapter rejects failed requests, redirects, malformed documents, and incomplete or unordered fixture pages. It has no access to subscriptions or delivery channels.
 
-The feed store accepts only configured fixture URLs and enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps the article checkpoint. Re-enabling or replacing the URL clears the baseline and prior poll health.
+The feed store accepts only configured fixture URLs and enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps the article checkpoint. Intervals must produce a timestamp the UI can display. Re-enabling or replacing the URL clears the baseline and prior poll health.
 
 `GET /api/admin/feeds` returns `{feeds}`. `POST /api/admin/feeds` takes `url`, `publisher`, `topic`, and optional `enabled` and `pollIntervalSeconds`. It returns the created feed with HTTP 201. `PATCH /api/admin/feeds/:id` accepts changes to these fields and returns the updated feed. Feed responses also include `id`, `nextPollAt`, `lastPollAttemptAt`, `lastPollSuccessAt`, and `lastPollError`. Timestamps use UTC Unix milliseconds. Duplicate URLs return HTTP 409 and other invalid settings return HTTP 400.
 

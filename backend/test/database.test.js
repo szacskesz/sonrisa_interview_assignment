@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createApp } from '../src/app.js';
-import { migrateDatabase, openDatabase } from '../src/database.js';
+import { migrateDatabase, openDatabase, transaction } from '../src/database.js';
 
 test('opens the configured file and closes the connection with the API', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'alerts-db-'));
@@ -48,4 +48,13 @@ test('rolls back a failed migration and refuses a newer database', () => {
   assert.equal(database.prepare("SELECT name FROM sqlite_schema WHERE name = 'users'").get(), undefined);
   database.exec('PRAGMA user_version = 10');
   assert.throws(() => migrateDatabase(database), /Unsupported database schema version 10/);
+});
+
+test('preserves the original error when SQLite already rolled back the transaction', () => {
+  using database = openDatabase(':memory:');
+  database.exec('CREATE TABLE example (id INTEGER PRIMARY KEY)');
+  assert.throws(() => transaction(database, () => {
+    database.exec('INSERT INTO example VALUES (1); INSERT OR ROLLBACK INTO example VALUES (1)');
+  }), /UNIQUE constraint failed/);
+  assert.equal(database.prepare('SELECT COUNT(*) AS count FROM example').get().count, 0);
 });

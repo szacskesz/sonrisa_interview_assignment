@@ -1,4 +1,5 @@
 export const defaultFixtureUrl = 'http://127.0.0.1:18080/rss.xml';
+export const latestRepresentableDate = 8_640_000_000_000_000;
 
 function normalizeUrl(value) {
   const url = new URL(value);
@@ -53,7 +54,7 @@ export function createFeedStore(database, { trustedUrls = [defaultFixtureUrl], n
     const topic = (values.topic ?? existing?.topic)?.trim();
     const interval = values.pollIntervalSeconds ?? existing?.poll_interval_seconds ?? 300;
     if (!publisher || !topic || !Number.isSafeInteger(interval) || interval < 1 ||
-        interval > Math.floor((Number.MAX_SAFE_INTEGER - now()) / 1000)) {
+        interval > Math.floor((latestRepresentableDate - now()) / 1000)) {
       throw new FeedSettingsError('invalid_feed_settings', 'Enter a publisher, topic, and positive polling interval');
     }
     return {

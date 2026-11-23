@@ -18,6 +18,7 @@ test('creates normalized settings and rejects duplicate, malformed and untrusted
   assert.throws(() => feeds.create({ ...settings, url: backup }), { code: 'untrusted_feed_url' });
   assert.throws(() => feeds.create({ ...settings, url: defaultFixtureUrl + '?page=2' }), { code: 'invalid_feed_url' });
   assert.throws(() => feeds.update(feed.id, { pollIntervalSeconds: 0 }), { code: 'invalid_feed_settings' });
+  assert.throws(() => feeds.update(feed.id, { pollIntervalSeconds: 8_640_000_000_000 }), { code: 'invalid_feed_settings' });
   assert.equal(feeds.update(-1, {}), undefined);
 });
 

@@ -1,3 +1,5 @@
+import { latestRepresentableDate } from './feeds.js';
+
 /** Run one cycle per due feed, record its health, and back off after failures. */
 export function createFeedScheduler({ database, feeds, poll, now = Date.now }) {
   const due = database.prepare('SELECT * FROM feeds WHERE enabled = 1 AND next_poll_at_ms <= ? ORDER BY next_poll_at_ms, id');
@@ -33,10 +35,11 @@ export function createFeedScheduler({ database, feeds, poll, now = Date.now }) {
         const consecutive = previous?.revision === revision ? previous.consecutive + 1 : 1;
         failures.set(feed.id, { revision, consecutive });
         const backoff = Math.min(300_000, 5_000 * 2 ** Math.min(consecutive - 1, 6));
-        markFailure.run(failure.slice(0, 500), rescheduled ? current.next_poll_at_ms : finishedAt + backoff, feed.id);
+        const nextPoll = Math.min(latestRepresentableDate, finishedAt + backoff);
+        markFailure.run(failure.slice(0, 500), rescheduled ? current.next_poll_at_ms : nextPoll, feed.id);
       } else {
         failures.delete(feed.id);
-        const nextPoll = Math.max(finishedAt, startedAt + current.poll_interval_seconds * 1_000);
+        const nextPoll = Math.min(latestRepresentableDate, Math.max(finishedAt, startedAt + current.poll_interval_seconds * 1_000));
         markSuccess.run(finishedAt, rescheduled ? current.next_poll_at_ms : nextPoll, feed.id);
       }
     }

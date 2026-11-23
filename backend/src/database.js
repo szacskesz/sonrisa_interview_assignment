@@ -24,7 +24,7 @@ export function transaction(database, work) {
     database.exec('COMMIT');
     return result;
   } catch (error) {
-    database.exec('ROLLBACK');
+    if (database.isTransaction) database.exec('ROLLBACK');
     throw error;
   }
 }
