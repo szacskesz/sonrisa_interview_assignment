@@ -5,6 +5,8 @@ import { createEmailChannel } from './email-channel.js';
 const app = createApp({
   databasePath: configuredDatabasePath(),
   startBackground: true,
+  jwtSecret: process.env.JWT_SECRET ?? '',
+  webOrigin: process.env.WEB_ORIGIN,
   trustedUrls: process.env.TRUSTED_RSS_URLS?.split(',').map((url) => url.trim()),
   channels: new Map([['email', createEmailChannel({
     host: process.env.SMTP_HOST,

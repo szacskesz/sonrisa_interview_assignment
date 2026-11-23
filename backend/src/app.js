@@ -1,4 +1,6 @@
+import { randomBytes } from 'node:crypto';
 import Fastify from 'fastify';
+import { configureApiErrors } from './api-errors.js';
 import { migrateDatabase, openDatabase } from './database.js';
 import { createDeliveryQueue } from './delivery-jobs.js';
 import { createDeliveryWorker } from './delivery-worker.js';
@@ -9,14 +11,18 @@ import { createFeedStore } from './feeds.js';
 import { createMatcher } from './matching.js';
 import { startPeriodicTask } from './periodic-task.js';
 import { createRssSource } from './rss-source.js';
+import { configureSessionApi } from './session-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
 
 /** Build the API for an HTTP listener or in-process request tests. */
 export function createApp({
   databasePath = ':memory:', trustedUrls, now = Date.now, startBackground = false,
+  jwtSecret = randomBytes(32).toString('hex'), webOrigin = 'http://127.0.0.1:4200',
   sourceFor = ({ url }) => createRssSource(url), channels = new Map([['email', createEmailChannel()]]), ...options
 } = {}) {
-  const app = Fastify(options);
+  const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } }, ...options });
+  configureApiErrors(app);
+  configureSessionApi(app, { secret: jwtSecret, webOrigin });
   const database = openDatabase(databasePath);
   app.decorate('database', database);
   app.decorate('services', null);

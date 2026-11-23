@@ -10,6 +10,8 @@ pnpm --dir backend start
 
 The server listens on `127.0.0.1:3000` by default. Set `API_PORT` to change the port. `GET /api/health` returns HTTP 200 and `{"status":"ok"}` when the API can serve requests.
 
+Set `JWT_SECRET` to a random secret of at least 32 bytes before starting the API. Browser mutations must send the configured `WEB_ORIGIN` as their origin. It defaults to `http://127.0.0.1:4200`. Use the configured address when opening Angular.
+
 The server opens `backend/data/alerts.sqlite` by default. Set `ALERTS_DB_PATH` to use a different file. The app closes its database when Fastify shuts down. In-process app tests use an isolated in-memory database unless they supply a path.
 
 Startup applies the SQL migrations under `backend/src/migrations/` in order. SQLite records the applied version in `PRAGMA user_version`. If a migration fails, SQLite rolls back its changes and API startup fails.
@@ -17,6 +19,8 @@ Startup applies the SQL migrations under `backend/src/migrations/` in order. SQL
 ## Demo accounts
 
 Set `DEMO_ADMIN_PASSWORD` and `DEMO_USER_PASSWORD` to local demo secrets of 12 to 128 characters, then run `pnpm --dir backend seed`. The default emails are `admin@example.test` and `user@example.test`. Override them with `DEMO_ADMIN_EMAIL` and `DEMO_USER_EMAIL`. The seed applies migrations and creates both accounts with salted scrypt hashes. Rerunning it preserves existing accounts and passwords. Use the same `ALERTS_DB_PATH` for seeding and the server.
+
+`POST /api/session` takes `{email,password}`, returns `{id,email,role}`, and sets the HTTP-only session cookie. Sessions expire after one hour. `GET /api/session` finds the current account and role and returns HTTP 401 if the session is invalid. `DELETE /api/session` clears the cookie and returns HTTP 204. An HTTPS origin also sets the Secure cookie attribute. Errors use `{code,message}`.
 
 ## Fake RSS
 
