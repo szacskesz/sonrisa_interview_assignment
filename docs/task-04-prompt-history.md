@@ -92,3 +92,11 @@ the main goal is to create a working demo with email and the fake rss. SO check 
 ```
 
 Decision: the demo uses the real RSS and SMTP adapters with the fake feed and a local Mailpit inbox. Keep user subscriptions, shared admin polling settings, and delivery evidence in scope. Schedule Slack and additional event sources as follow-ups that use the same adapter boundaries.
+
+## Phase 1 RSS checkpoint review
+
+```text
+During review i saw this: "On the first successful poll, record existing items as seen so enabling a feed does not send its backlog". Will you store every event/news from the rss into the database? Thas a bad idea, we only need the last news time (or id) so we know which are the new news and the old  news. Please check this.
+```
+
+Decision: store one publication timestamp per feed and no per-item seen history. Process new entries in memory and persist only the minimal email job data for matching items.
