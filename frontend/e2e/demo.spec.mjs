@@ -7,16 +7,16 @@ test('a configured RSS topic produces a real email and a visible admin result', 
   const title = () => `News ${new Date(demo.now()).toISOString()}`;
   try {
     await signIn(admin, demo, demo.admin);
-    await expect(admin.getByRole('heading', { name: 'RSS feeds', exact: true })).toBeVisible();
-    await admin.getByRole('button', { name: 'Add feed' }).click();
-    const feedDialog = admin.getByRole('dialog', { name: 'Add feed' });
+    await expect(admin.getByRole('heading', { name: 'Sources', exact: true })).toBeVisible();
+    await admin.getByRole('button', { name: 'Add source' }).click();
+    const feedDialog = admin.getByRole('dialog', { name: 'Add source' });
     await feedDialog.getByLabel('Feed URL').fill(demo.feedUrl);
     await feedDialog.getByLabel('Publisher').fill('Sonrisa Demo News');
     await feedDialog.getByLabel('Topic').fill('World News');
     await feedDialog.getByLabel('Polling interval (seconds)').fill('60');
-    await feedDialog.getByRole('button', { name: 'Save feed' }).click();
+    await feedDialog.getByRole('button', { name: 'Save source' }).click();
     await expect(feedDialog).toBeHidden();
-    await expect(admin.getByText('Feed added.')).toBeVisible();
+    await expect(admin.getByText('Source added.')).toBeVisible();
     await expect(admin.getByText('Healthy')).toBeVisible();
 
     await signIn(user, demo, demo.user, 'incorrect-password');
@@ -30,7 +30,7 @@ test('a configured RSS topic produces a real email and a visible admin result', 
     await subscription.getByRole('button', { name: 'Save subscription' }).click();
     await expect(user.getByRole('row', { name: /World News.*Active/ })).toBeVisible();
     await expect.poll(async () => user.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-    await expect(user.getByRole('link', { name: 'Feeds' })).toHaveCount(0);
+    await expect(user.getByRole('link', { name: 'Sources' })).toHaveCount(0);
     await user.goto(`${demo.url}/admin/deliveries`);
     await expect(user.getByRole('heading', { name: 'Access denied' })).toBeVisible();
     await user.getByRole('button', { name: 'Sign out' }).click();

@@ -1,31 +1,36 @@
 <div class="screen-heading">
-  <h1>RSS feeds</h1>
-  <button type="button" class="primary" [disabled]="loading() || pending() || !!loadError()" (click)="openEditor()">Add feed</button>
+  <h1>Sources</h1>
+  <button type="button" class="primary" [disabled]="loading() || pending() || !!loadError()" (click)="openEditor()">Add source</button>
 </div>
 @if (feedback(); as message) { <p class="notice" role="status">{{ message }}</p> }
 @if (actionError() || refreshError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
 @if (loading()) {
-  <p class="state-panel" role="status">Loading RSS feeds…</p>
+  <p class="state-panel" role="status">Loading sources…</p>
 } @else if (loadError(); as message) {
   <section class="state-panel">
-    <h2>RSS feeds unavailable</h2>
+    <h2>Sources unavailable</h2>
     <p role="alert">{{ message }}</p>
     <button type="button" (click)="load()">Try again</button>
   </section>
 } @else if (rows().length === 0) {
-  <section class="state-panel"><h2>No RSS feeds yet</h2><p>Add an RSS feed to offer its topic to subscribers.</p></section>
+  <section class="state-panel"><h2>No sources yet</h2><p>Add a source to offer its topic to subscribers.</p></section>
 } @else {
   <div class="table-frame">
-    <table class="feeds-table" aria-label="Configured RSS feeds" role="table">
+    <table class="feeds-table" aria-label="Configured sources" role="table">
       <colgroup><col><col><col><col></colgroup>
       <thead role="rowgroup"><tr role="row">
-        <th scope="col" role="columnheader">Feed</th><th scope="col" role="columnheader">Topic and interval</th>
+        <th scope="col" role="columnheader">Source</th><th scope="col" role="columnheader">Topic and interval</th>
         <th scope="col" role="columnheader">Poll health (UTC)</th><th scope="col" role="columnheader">Actions</th>
       </tr></thead>
       <tbody role="rowgroup">
         @for (row of rows(); track row.id) {
           <tr role="row">
-            <td role="cell" data-label="Feed"><div><strong>{{ row.publisher }}</strong><small class="secondary">{{ row.url }}</small></div></td>
+            <td role="cell" data-label="Source">
+              <div>
+                <strong>{{ row.sourceKind === 'usgs' ? 'USGS Earthquakes' : row.publisher }}</strong>
+                <small class="secondary">{{ row.url }}</small>
+              </div>
+            </td>
             <td role="cell" data-label="Topic and interval"><div>{{ row.topic }}<small class="secondary">Every {{ row.pollIntervalSeconds }} seconds</small></div></td>
             <td role="cell" data-label="Poll health (UTC)">
               <div>
@@ -56,22 +61,37 @@
 }
 
 <dialog #feedDialog aria-labelledby="feed-title" (cancel)="cancel($event)">
-  <h2 id="feed-title">{{ editing() === null ? 'Add feed' : 'Edit feed' }}</h2>
+  <h2 id="feed-title">{{ editing() === null ? 'Add source' : 'Edit source' }}</h2>
   <form novalidate (submit)="save($event)">
-    <label>Feed URL <input type="url" [formField]="editor.url"
-      [class.input-error]="dialogError()?.code?.endsWith('_feed_url')" aria-describedby="feed-hint feed-error" /></label>
-    <p class="secondary feed-hint" id="feed-hint">Enter the RSS feed URL, including any query parameters.</p>
-    <label>Publisher <input [formField]="editor.publisher" /></label>
-    <label>Topic <input [formField]="editor.topic" /></label>
+    @if (editing() === null) {
+      <label>Source type
+        <select [formField]="editor.sourceKind" (change)="changeSourceKind()">
+          <option value="rss">RSS</option>
+          <option value="usgs">USGS Earthquakes</option>
+        </select>
+      </label>
+    }
+    @if (sourceKind() === 'rss') {
+      <label>Feed URL <input type="url" [formField]="editor.url"
+        [class.input-error]="dialogError()?.code?.endsWith('_feed_url')" aria-describedby="feed-hint feed-error" /></label>
+      <p class="secondary feed-hint" id="feed-hint">Enter the RSS feed URL, including any query parameters.</p>
+      <label>Publisher <input [formField]="editor.publisher" /></label>
+      <label>Topic <input [formField]="editor.topic" /></label>
+    } @else {
+      <p><strong>USGS Earthquakes</strong></p>
+      <p class="secondary notice">Worldwide magnitude 4.5 and above. Subscribers choose the Earthquakes topic.</p>
+    }
     <label>Polling interval (seconds) <input type="number" step="1" [formField]="editor.pollIntervalSeconds" /></label>
     <label class="checkbox"><input type="checkbox" [formField]="editor.enabled" /> Enabled</label>
     @if (dialogError(); as failure) { <p class="inline-error" id="feed-error" role="alert">{{ failure.message }}</p> }
     @if (editor().touched() && editor().invalid()) {
-      <p class="inline-error" role="alert">Enter a valid feed URL, publisher, topic, and a positive whole number of seconds.</p>
+      <p class="inline-error" role="alert">
+        {{ sourceKind() === 'rss' ? 'Enter a valid feed URL, publisher, topic, and a positive whole number of seconds.' : 'Enter a positive whole number of seconds.' }}
+      </p>
     }
     <div class="form-actions">
       <button type="button" [disabled]="pending()" (click)="cancel()">Cancel</button>
-      <button class="primary" [disabled]="pending()">Save feed</button>
+      <button class="primary" [disabled]="pending()">Save source</button>
     </div>
   </form>
 </dialog>

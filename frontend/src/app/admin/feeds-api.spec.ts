@@ -8,7 +8,7 @@ describe('FeedsApi', () => {
   const path = '/api/admin/feeds';
   const settings: FeedSettings = { url: 'http://127.0.0.1:18080/rss.xml', publisher: 'Demo RSS',
     topic: 'World', enabled: true, pollIntervalSeconds: 60 };
-  const feed: FeedRecord = { ...settings, id: 1, nextPollAt: 123, lastPollAttemptAt: null,
+  const feed: FeedRecord = { ...settings, id: 1, sourceKind: 'rss', nextPollAt: 123, lastPollAttemptAt: null,
     lastPollSuccessAt: null, lastPollError: null };
   let api: FeedsApi;
   let http: HttpTestingController;

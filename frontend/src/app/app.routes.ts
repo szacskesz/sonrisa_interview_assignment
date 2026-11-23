@@ -9,7 +9,7 @@ export const routes: Routes = [
     loadComponent: () => import('./subscriptions/subscriptions-page/subscriptions-page').then((module) => module.SubscriptionsPage),
   },
   {
-    path: 'admin/feeds', title: 'RSS feeds', canActivate: [requireRole('admin')],
+    path: 'admin/feeds', title: 'Sources', canActivate: [requireRole('admin')],
     loadComponent: () => import('./admin/feeds-page/feeds-page').then((module) => module.FeedsPage),
   },
   {

@@ -1,11 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
-import { FormField, form, maxLength, min, pattern, required, submit, validate } from '@angular/forms/signals';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import { applyWhen, FormField, form, maxLength, min, pattern, required, submit, validate } from '@angular/forms/signals';
 import { apiError } from '../../core/api-error';
 import { refreshWhileMounted } from '../../core/page-refresh';
-import { FeedRecord, FeedsApi, FeedSettings } from '../feeds-api';
+import { FeedRecord, FeedsApi, FeedSettings, SourceKind } from '../feeds-api';
 
-const defaultSettings: FeedSettings = { url: '', publisher: '', topic: '', enabled: true, pollIntervalSeconds: 300 };
+const defaultIntervals = { rss: 300, usgs: 60 };
+const defaultSettings: FeedSettings & { sourceKind: SourceKind } = {
+  sourceKind: 'rss', url: '', publisher: '', topic: '', enabled: true, pollIntervalSeconds: defaultIntervals.rss,
+};
 
 @Component({
   imports: [DatePipe, FormField],
@@ -16,7 +19,7 @@ const defaultSettings: FeedSettings = { url: '', publisher: '', topic: '', enabl
 export class FeedsPage implements OnInit {
   private readonly api = inject(FeedsApi);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('feedDialog');
-  private readonly model = signal<FeedSettings>({ ...defaultSettings });
+  private readonly model = signal({ ...defaultSettings });
   private requesting = false;
   private revision = 0;
   protected readonly rows = signal<FeedRecord[]>([]);
@@ -28,14 +31,17 @@ export class FeedsPage implements OnInit {
   protected readonly dialogError = signal<{ code: string; message: string } | null>(null);
   protected readonly pending = signal(false);
   protected readonly editing = signal<number | null>(null);
+  protected readonly sourceKind = computed(() => this.model().sourceKind);
   protected readonly editor = form(this.model, (fields) => {
-    required(fields.url);
-    pattern(fields.url, /^https?:\/\/\S+$/i);
-    maxLength(fields.url, 2_048);
-    required(fields.publisher);
-    maxLength(fields.publisher, 120);
-    required(fields.topic);
-    maxLength(fields.topic, 120);
+    applyWhen(fields, ({ value }) => value().sourceKind === 'rss', (rss) => {
+      required(rss.url);
+      pattern(rss.url, /^https?:\/\/\S+$/i);
+      maxLength(rss.url, 2_048);
+      required(rss.publisher);
+      maxLength(rss.publisher, 120);
+      required(rss.topic);
+      maxLength(rss.topic, 120);
+    });
     required(fields.pollIntervalSeconds);
     min(fields.pollIntervalSeconds, 1);
     validate(fields.pollIntervalSeconds, ({ value }) => Number.isSafeInteger(value()) ? null : { kind: 'integer' });
@@ -60,7 +66,7 @@ export class FeedsPage implements OnInit {
       this.loadError.set('');
       this.refreshError.set('');
     } catch (error) {
-      const message = apiError(error, 'Could not load RSS feeds.').message;
+      const message = apiError(error, 'Could not load sources.').message;
       if (silent && !this.loadError()) this.refreshError.set(message);
       else this.loadError.set(message);
     } finally {
@@ -81,10 +87,15 @@ export class FeedsPage implements OnInit {
     if (!feed) {
       this.editor().reset({ ...defaultSettings });
     } else {
-      const { url, topic, publisher, enabled, pollIntervalSeconds } = feed;
-      this.editor().reset({ url, topic, publisher, enabled, pollIntervalSeconds });
+      const { sourceKind, url, topic, publisher, enabled, pollIntervalSeconds } = feed;
+      this.editor().reset({ sourceKind, url, topic, publisher, enabled, pollIntervalSeconds });
     }
     this.dialog().nativeElement.showModal();
+  }
+
+  protected changeSourceKind(): void {
+    this.editor.pollIntervalSeconds().value.set(defaultIntervals[this.sourceKind()]);
+    this.dialogError.set(null);
   }
 
   protected cancel(event?: Event): void {
@@ -100,20 +111,20 @@ export class FeedsPage implements OnInit {
     this.dialogError.set(null);
     await submit(this.editor, async () => {
       const id = this.editing();
-      const { url, publisher, topic, ...rest } = this.model();
+      const { sourceKind, url, publisher, topic, ...rest } = this.model();
       const settings = { ...rest, url: url.trim(), publisher: publisher.trim(), topic: topic.trim() };
-      if (!settings.publisher || !settings.topic) {
+      if (sourceKind === 'rss' && (!settings.publisher || !settings.topic)) {
         this.dialogError.set({ code: 'invalid_feed_settings', message: 'Enter a publisher and topic.' });
         return;
       }
       try {
-        await this.mutate(
-          () => id === null ? this.api.create(settings) : this.api.update(id, settings),
-          id === null ? 'Feed added.' : 'Feed updated.',
-        );
+        const update = sourceKind === 'usgs'
+          ? () => id === null ? this.api.create({ sourceKind, ...rest }) : this.api.update(id, rest)
+          : () => id === null ? this.api.create(settings) : this.api.update(id, settings);
+        await this.mutate(update, id === null ? 'Source added.' : 'Source updated.');
         this.dialog().nativeElement.close();
       } catch (error) {
-        this.dialogError.set(apiError(error, 'Could not save the feed.'));
+        this.dialogError.set(apiError(error, 'Could not save the source.'));
       }
     });
   }
@@ -121,9 +132,9 @@ export class FeedsPage implements OnInit {
   protected async toggle(feed: FeedRecord): Promise<void> {
     const enabled = !feed.enabled;
     try {
-      await this.mutate(() => this.api.update(feed.id, { enabled }), enabled ? 'Feed enabled.' : 'Feed disabled.');
+      await this.mutate(() => this.api.update(feed.id, { enabled }), enabled ? 'Source enabled.' : 'Source disabled.');
     } catch (error) {
-      this.actionError.set(apiError(error, 'Could not change the feed status.').message);
+      this.actionError.set(apiError(error, 'Could not change the source status.').message);
     }
   }
 

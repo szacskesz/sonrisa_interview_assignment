@@ -4,7 +4,7 @@
     @if (account(); as current) {
       <nav class="app-nav" aria-label="Application">
         @if (current.role === 'admin') {
-          <a routerLink="/admin/feeds" routerLinkActive="current" ariaCurrentWhenActive="page">Feeds</a>
+          <a routerLink="/admin/feeds" routerLinkActive="current" ariaCurrentWhenActive="page">Sources</a>
           <a routerLink="/admin/deliveries" routerLinkActive="current" ariaCurrentWhenActive="page">Deliveries</a>
         } @else {
           <a routerLink="/subscriptions" routerLinkActive="current" ariaCurrentWhenActive="page">Subscriptions</a>

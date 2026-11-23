@@ -7,12 +7,12 @@ test.skip(process.env.TEST_LIVE_RSS !== '1', 'Set TEST_LIVE_RSS=1 to verify the 
 
 test('adds and polls the live Hungarian Google News feed', async ({ demo, page }) => {
   await signIn(page, demo, demo.admin);
-  await page.getByRole('button', { name: 'Add feed' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Add feed' });
+  await page.getByRole('button', { name: 'Add source' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add source' });
   await dialog.getByLabel('Feed URL').fill(googleNewsUrl);
   await dialog.getByLabel('Publisher').fill('Google Hírek');
   await dialog.getByLabel('Topic').fill('Hungarian news');
-  await dialog.getByRole('button', { name: 'Save feed' }).click();
+  await dialog.getByRole('button', { name: 'Save source' }).click();
   await expect(dialog).toBeHidden();
   const row = page.getByRole('row').filter({ hasText: 'Google Hírek' });
   await expect(row.getByText(googleNewsUrl, { exact: true })).toBeVisible();

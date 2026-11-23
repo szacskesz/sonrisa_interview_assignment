@@ -4,7 +4,7 @@ import { settle, stubDialogs } from '../../testing/dom';
 import { FeedRecord, FeedsApi } from '../feeds-api';
 import { FeedsPage } from './feeds-page';
 
-const feed: FeedRecord = { id: 1, url: 'http://127.0.0.1:18080/rss.xml', publisher: 'Demo RSS',
+const feed: FeedRecord = { id: 1, sourceKind: 'rss', url: 'http://127.0.0.1:18080/rss.xml', publisher: 'Demo RSS',
   topic: 'World', pollIntervalSeconds: 60, enabled: true, nextPollAt: 100,
   lastPollAttemptAt: null, lastPollSuccessAt: null, lastPollError: null };
 
@@ -23,12 +23,12 @@ function setup() {
   return { api, root, button, stable };
 }
 
-describe('RSS feeds page', () => {
+describe('Sources page', () => {
   it('adds a feed, edits its polling interval, and disables or re-enables it', async () => {
     const { api, root, button, stable } = setup();
     await stable();
     stubDialogs(root);
-    button('Add feed').click();
+    button('Add source').click();
     await stable();
     const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
     const inputs = [...dialog.querySelectorAll('input')];
@@ -80,10 +80,48 @@ describe('RSS feeds page', () => {
     const { api, root, button, stable } = setup();
     api.list.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([{ ...feed, lastPollError: 'Feed timed out', lastPollAttemptAt: 50 }]);
     await stable();
-    expect(root.textContent).toContain('RSS feeds unavailable');
+    expect(root.textContent).toContain('Sources unavailable');
     button('Try again').click();
     await stable();
     expect(root.querySelector('tbody')?.textContent).toContain('Poll failed');
     expect(root.querySelector('tbody')?.textContent).toContain('Feed timed out');
+  });
+
+  it('adds USGS with its default interval and edits only the supported settings', async () => {
+    const { api, root, button, stable } = setup();
+    const usgs: FeedRecord = {
+      ...feed, sourceKind: 'usgs', topic: 'Earthquakes', publisher: 'USGS',
+      url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
+    };
+    api.create.mockResolvedValue(usgs);
+    await stable();
+    stubDialogs(root);
+    button('Add source').click();
+    await stable();
+    const dialog = root.querySelector<HTMLDialogElement>('dialog')!;
+    const select = dialog.querySelector('select')!;
+    expect(select.value).toBe('rss');
+    select.value = 'usgs';
+    select.dispatchEvent(new Event('input'));
+    select.dispatchEvent(new Event('change'));
+    await stable();
+    const interval = () => dialog.querySelector<HTMLInputElement>('input[type=number]')!;
+    expect(interval().value).toBe('60');
+    expect(dialog.querySelector('input[type=url]')).toBeNull();
+    const save = () => dialog.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    save();
+    await stable();
+    expect(api.create).toHaveBeenCalledWith({ sourceKind: 'usgs', enabled: true, pollIntervalSeconds: 60 });
+    expect(root.querySelector('tbody')?.textContent).toContain('USGS Earthquakes');
+
+    button('Edit').click();
+    await stable();
+    expect(dialog.querySelector('select')).toBeNull();
+    interval().value = '120';
+    interval().dispatchEvent(new Event('input'));
+    api.update.mockResolvedValue({ ...usgs, pollIntervalSeconds: 120 });
+    save();
+    await stable();
+    expect(api.update).toHaveBeenCalledWith(usgs.id, { enabled: true, pollIntervalSeconds: 120 });
   });
 });
