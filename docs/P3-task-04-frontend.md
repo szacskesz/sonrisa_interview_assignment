@@ -31,4 +31,6 @@ The deliveries page refreshes while open and displays the latest headline, sourc
 
 With Mailpit running, install Chromium once with `pnpm --dir frontend exec playwright install chromium` and run `pnpm --dir frontend e2e`. To use a supported Microsoft Edge installation, set `TEST_BROWSER_CHANNEL=msedge`. The tests build Angular, start the API and fixture on loopback addresses, and use a separate SQLite file and unique mailbox addresses. Set `TEST_SMTP_PORT` or `TEST_MAILPIT_URL` to override the local Mailpit defaults.
 
+The suite covers the automatic browser demo, multi-page restart recovery, strict activation, SMTP retry across a second restart, overlap deduplication, a fresh baseline after re-enable, and no email while paused or after removal. It also checks admin feed edits, duplicate URL feedback, and the UI response when a protected request loses its session. Controlled clocks advance the fake feed without waiting for wall-clock minutes.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)

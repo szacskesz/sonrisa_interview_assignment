@@ -52,19 +52,44 @@ export const test = base.extend({
       const suffix = randomUUID();
       const admin = `admin-${suffix}@example.test`;
       const user = `user-${suffix}@example.test`;
+      const lateUser = `late-${suffix}@example.test`;
       const password = 'local-e2e-demo-password';
       const email = createEmailChannel({ port: Number(process.env.TEST_SMTP_PORT ?? 11025) });
-      app = createApp({
-        databasePath: join(directory, 'alerts.sqlite'), jwtSecret: randomBytes(32).toString('hex'),
-        trustedUrls: [feed.url], webOrigin: url, now, startBackground: true, channels: new Map([['email', email]]),
-      });
-      await app.ready();
+      const jwtSecret = randomBytes(32).toString('hex');
+      let failNext = false;
+      const channel = {
+        send(destination, message) {
+          if (!failNext) return email.send(destination, message);
+          failNext = false;
+          return { status: 'retryable', error: 'Test SMTP interruption' };
+        },
+      };
+      const open = async (startBackground) => {
+        app = createApp({
+          databasePath: join(directory, 'alerts.sqlite'), jwtSecret,
+          trustedUrls: [feed.url], webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
+        });
+        await app.ready();
+      };
+      await open(true);
       await seedDemoAccounts(app.database, {
         DEMO_ADMIN_EMAIL: admin, DEMO_ADMIN_PASSWORD: password, DEMO_USER_EMAIL: user, DEMO_USER_PASSWORD: password,
       });
+      await seedDemoAccounts(app.database, {
+        DEMO_ADMIN_EMAIL: admin, DEMO_ADMIN_PASSWORD: password, DEMO_USER_EMAIL: lateUser, DEMO_USER_PASSWORD: password,
+      });
       await use({
-        url, admin, user, password, feedUrl: feed.url, now,
+        url, admin, user, lateUser, password, feedUrl: feed.url, now,
         advance(milliseconds) { time += milliseconds; },
+        async stop() {
+          const current = app;
+          app = undefined;
+          await current.close();
+        },
+        start: () => open(false),
+        poll: () => app.services.pollFeeds(),
+        deliver: () => app.services.deliver(),
+        failNextDelivery() { failNext = true; },
         async messages(destination = user) {
           const query = new URLSearchParams({ query: `to:${destination}` });
           const { messages } = await mailpit(`/api/v1/search?${query}`);
