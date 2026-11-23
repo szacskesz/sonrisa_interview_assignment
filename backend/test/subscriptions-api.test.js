@@ -17,7 +17,8 @@ test('creates, edits, pauses, resumes and removes subscriptions for the signed-i
   const created = await request(2, 'POST', path, { topic: 'World' });
   assert.equal(created.statusCode, 201);
   const row = created.json();
-  assert.deepEqual(row, { id: 1, topic: 'World', status: 'active', destination: 'reader@example.test', createdAt: 100, activatedAt: 100 });
+  assert.deepEqual(row, { id: 1, topic: 'World', status: 'active', channels: ['email'],
+    destination: 'reader@example.test', createdAt: 100, activatedAt: 100 });
   assert.deepEqual((await request(2, 'GET', path)).json(), { subscriptions: [row] });
   assert.deepEqual((await request(3, 'GET', path)).json(), { subscriptions: [] });
   const item = `${path}/${row.id}`;
@@ -34,4 +35,26 @@ test('creates, edits, pauses, resumes and removes subscriptions for the signed-i
   assert.equal((await request(2, 'PATCH', item, { status: 'active' })).json().activatedAt, 300);
   assert.equal((await request(2, 'DELETE', item)).statusCode, 204);
   assert.equal((await request(2, 'DELETE', item)).statusCode, 404);
+});
+
+test('validates new delivery choices and preserves existing channel activation and disconnected preferences', async (t) => {
+  let time = 10;
+  const { app, request } = await createApiFixture(t, { now: () => time, slackIdentity: { workspaceId: 'T123' } });
+  app.services.feeds.create({ url: defaultFixtureUrl, publisher: 'Fixture', topic: 'World' });
+  const path = '/api/subscriptions';
+  for (const channels of [[], ['email', 'email'], ['sms'], 'email']) {
+    assert.equal((await request(2, 'POST', path, { topic: 'World', channels })).statusCode, 400);
+  }
+  assert.equal((await request(2, 'POST', path, { topic: 'World', channels: ['slack'] })).json().code, 'slack_connection_required');
+  const created = (await request(2, 'POST', path, { topic: 'World' })).json();
+  app.database.exec("UPDATE users SET slack_workspace_id = 'T123', slack_member_id = 'U123', slack_connected_at_ms = 15 WHERE id = 2");
+  time = 20;
+  const item = `${path}/${created.id}`;
+  assert.deepEqual((await request(2, 'PATCH', item, { channels: ['slack', 'email'] })).json().channels, ['email', 'slack']);
+  assert.deepEqual(app.database.prepare('SELECT activated_at_ms FROM subscription_channels ORDER BY channel').all()
+    .map((row) => row.activated_at_ms), [10, 20]);
+  await request(2, 'DELETE', '/api/slack');
+  assert.deepEqual((await request(2, 'PATCH', item, { status: 'paused' })).json().channels, ['email', 'slack']);
+  assert.deepEqual((await request(2, 'PATCH', item, { channels: ['email'] })).json().channels, ['email']);
+  assert.equal((await request(2, 'PATCH', item, { channels: ['slack'] })).json().code, 'slack_connection_required');
 });

@@ -37,7 +37,7 @@ export function createApp({
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
   configureSlackApi(app, { identity: slackIdentity, now });
   configureTopicsApi(app);
-  configureSubscriptionsApi(app);
+  configureSubscriptionsApi(app, { slackWorkspaceId: slackIdentity?.workspaceId });
   configureAdminFeedsApi(app);
   configureAdminDeliveriesApi(app);
   const database = openDatabase(databasePath);

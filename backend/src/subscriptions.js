@@ -1,4 +1,6 @@
-/** Persist subscription lifecycle changes scoped to the owning account. */
+import { transaction } from './database.js';
+
+/** Persist subscription lifecycle and per-channel activation scoped to the owning account. */
 export function createSubscriptionStore(database, { now = Date.now } = {}) {
   const list = database.prepare('SELECT * FROM subscriptions WHERE user_id = ? ORDER BY id');
   const find = database.prepare('SELECT * FROM subscriptions WHERE user_id = ? AND id = ?');
@@ -11,23 +13,38 @@ export function createSubscriptionStore(database, { now = Date.now } = {}) {
     WHERE user_id = ? AND id = ? RETURNING *
   `);
   const remove = database.prepare('DELETE FROM subscriptions WHERE user_id = ? AND id = ?');
+  const channels = database.prepare('SELECT channel FROM subscription_channels WHERE subscription_id = ? ORDER BY channel');
+  const addChannel = database.prepare('INSERT INTO subscription_channels VALUES (?, ?, ?)');
+  const removeChannel = database.prepare('DELETE FROM subscription_channels WHERE subscription_id = ? AND channel = ?');
+  const withChannels = (row) => row && { ...row, channels: channels.all(row.id).map(({ channel }) => channel) };
 
   return {
-    list: (userId) => list.all(userId),
-    get: (userId, id) => find.get(userId, id),
-    create(userId, topic) {
-      const timestamp = now();
-      return insert.get(userId, topic, timestamp, timestamp);
+    list: (userId) => list.all(userId).map(withChannels),
+    get: (userId, id) => withChannels(find.get(userId, id)),
+    create(userId, topic, selected = ['email']) {
+      return transaction(database, () => {
+        const timestamp = now();
+        const row = insert.get(userId, topic, timestamp, timestamp);
+        for (const channel of selected) addChannel.run(row.id, channel, timestamp);
+        return withChannels(row);
+      });
     },
     update(userId, id, changes) {
-      const current = find.get(userId, id);
-      if (!current) return undefined;
-      const { topic = current.topic, status = current.status } = changes;
-      const reactivated = status === 'active' && current.status === 'paused';
-      const activatedAt = reactivated || topic !== current.topic
-        ? Math.max(now(), current.activated_at_ms)
-        : current.activated_at_ms;
-      return update.get(topic, status, activatedAt, userId, id);
+      return transaction(database, () => {
+        const current = withChannels(find.get(userId, id));
+        if (!current) return undefined;
+        const { topic = current.topic, status = current.status, channels: selected = current.channels } = changes;
+        const timestamp = Math.max(now(), current.activated_at_ms);
+        const reactivated = status === 'active' && current.status === 'paused';
+        const activatedAt = reactivated || topic !== current.topic ? timestamp : current.activated_at_ms;
+        for (const channel of current.channels) {
+          if (!selected.includes(channel)) removeChannel.run(id, channel);
+        }
+        for (const channel of selected) {
+          if (!current.channels.includes(channel)) addChannel.run(id, channel, timestamp);
+        }
+        return withChannels(update.get(topic, status, activatedAt, userId, id));
+      });
     },
     remove: (userId, id) => remove.run(userId, id).changes > 0,
   };
