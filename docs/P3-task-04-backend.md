@@ -29,3 +29,5 @@ The feed store accepts only configured fixture URLs and enforces a unique normal
 ## Subscriptions
 
 The subscription store scopes reads and writes to the owner's account ID. Creation starts active. Resuming or changing the topic records a new activation time. Pausing preserves the previous activation time, and removing a subscription deletes the record.
+
+The matcher returns distinct account emails for active subscriptions whose topic matches the event and whose activation precedes its publication. The single-recipient check uses the same rule against current data.
