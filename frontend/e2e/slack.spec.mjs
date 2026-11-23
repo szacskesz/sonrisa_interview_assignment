@@ -46,10 +46,12 @@ test('links Slack, saves both channels and exposes independent retry and sent ou
     await page.getByRole('button', { name: 'Add subscription' }).click();
     const dialog = page.getByRole('dialog', { name: 'Add subscription' });
     await expect(dialog.getByRole('checkbox', { name: 'Slack direct message' })).toBeDisabled();
+    await capture(page, '08-slack-option-disabled');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
     demo.cancelNextSlackConsent();
     await page.getByRole('button', { name: 'Connect Slack' }).click();
     await expect(page.getByRole('alert')).toContainText('Slack connection did not complete');
+    await capture(page, '09-slack-connection-canceled');
     await link(page);
     await page.getByRole('button', { name: 'Add subscription' }).click();
     await dialog.getByLabel('Topic').selectOption(topic);
@@ -58,6 +60,7 @@ test('links Slack, saves both channels and exposes independent retry and sent ou
     await email.uncheck();
     await dialog.getByRole('button', { name: 'Save subscription' }).click();
     await expect(dialog.getByRole('alert')).toHaveText('Choose at least one delivery channel.');
+    await capture(page, '10-delivery-channel-required');
     await email.check();
     await dialog.getByRole('checkbox', { name: 'Slack direct message' }).check();
     await capture(page, '02-add-subscription-channels');
@@ -89,6 +92,27 @@ test('links Slack, saves both channels and exposes independent retry and sent ou
   } finally {
     await admin.close();
   }
+});
+
+test.describe('Slack unavailable', () => {
+  test.use({ simulateSlack: false });
+
+  test('shows the unavailable state on mobile with email still selected by default', async ({ browser, page, demo }) => {
+    const admin = await browser.newPage();
+    try {
+      await addTopic(admin, demo);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await signIn(page, demo, demo.user);
+      await expect(page.getByText('Slack delivery is unavailable on this installation.')).toBeVisible();
+      await capture(page, '11-slack-unavailable-mobile');
+      await page.getByRole('button', { name: 'Add subscription' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Add subscription' });
+      await expect(dialog.getByRole('checkbox', { name: 'Email' })).toBeChecked();
+      await expect(dialog.getByRole('checkbox', { name: 'Slack direct message' })).toBeDisabled();
+    } finally {
+      await admin.close();
+    }
+  });
 });
 
 test('preserves Slack-only settings after disconnect and skips alerts from before reconnect', async ({ browser, page, demo }) => {
