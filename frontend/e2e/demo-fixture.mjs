@@ -8,6 +8,7 @@ import { test as base } from '@playwright/test';
 import { seedDemoAccounts } from '../../backend/src/accounts.js';
 import { createApp } from '../../backend/src/app.js';
 import { createEmailChannel } from '../../backend/src/email-channel.js';
+import { createSlackChannel } from '../../backend/src/slack-channel.js';
 import { startObservedFeed } from './observed-feed.mjs';
 
 export const initialTime = Date.parse('2026-11-23T09:02:00.000Z');
@@ -23,12 +24,16 @@ async function mailpit(path) {
 
 export const test = base.extend({
   usgsFetch: [undefined, { option: true }],
-  async demo({ usgsFetch }, use) {
+  simulateSlack: [false, { option: true }],
+  async demo({ usgsFetch, simulateSlack }, use) {
     const directory = await mkdtemp(join(tmpdir(), 'alerts-browser-'));
     let time = initialTime;
     let app;
     const feeds = [];
     let server;
+    let cancelSlack = false;
+    let rateLimitSlack = false;
+    const slackMessages = [];
     try {
       await mailpit('/api/v1/messages?limit=1');
       const now = () => time;
@@ -39,7 +44,15 @@ export const test = base.extend({
       };
       const feed = await addFeed();
       server = createServer((request, response) => {
-        const { pathname } = new URL(request.url, 'http://127.0.0.1');
+        const { pathname, searchParams } = new URL(request.url, 'http://127.0.0.1');
+        if (simulateSlack && pathname === '/test/slack/authorize') {
+          const callback = new URL('/api/slack/callback', url);
+          callback.searchParams.set('state', searchParams.get('state'));
+          callback.searchParams.set(cancelSlack ? 'error' : 'code', cancelSlack ? 'access_denied' : 'test-code');
+          cancelSlack = false;
+          response.writeHead(302, { Location: callback.href }).end();
+          return;
+        }
         if (pathname.startsWith('/api/')) {
           if (app) app.routing(request, response);
           else response.writeHead(503).end();
@@ -70,11 +83,38 @@ export const test = base.extend({
           return { status: 'retryable', error: 'Test SMTP interruption' };
         },
       };
+      const channels = new Map([['email', channel]]);
+      const slackIdentity = simulateSlack ? {
+        workspaceId: 'TDEMO',
+        authorize(state) {
+          const consent = new URL(`http://localhost:${server.address().port}/test/slack/authorize`);
+          consent.searchParams.set('state', state);
+          return consent.href;
+        },
+        async exchange(code) {
+          if (code !== 'test-code') throw new Error('Unknown Slack fixture code');
+          return { workspaceId: 'TDEMO', memberId: 'UDEMO' };
+        },
+      } : undefined;
+      if (simulateSlack) channels.set('slack', createSlackChannel({ botToken: 'test-token', workspaceId: 'TDEMO' }, {
+        now,
+        async fetchRequest(endpoint, options) {
+          if (endpoint.endsWith('/auth.test')) return Response.json({ ok: true, team_id: 'TDEMO', bot_id: 'BDEMO' });
+          if (endpoint.endsWith('/conversations.open')) return Response.json({ ok: true, channel: { id: 'DDEMO' } });
+          if (!endpoint.endsWith('/chat.postMessage')) throw new Error('Unknown Slack fixture endpoint');
+          if (rateLimitSlack) {
+            rateLimitSlack = false;
+            return new Response(null, { status: 429, headers: { 'Retry-After': '90' } });
+          }
+          slackMessages.push(JSON.parse(options.body));
+          return Response.json({ ok: true });
+        },
+      }));
       const open = async (startBackground) => {
         app = createApp({
           databasePath: join(directory, 'alerts.sqlite'), jwtSecret,
           fixtureUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, usgsFetch,
-          channels: new Map([['email', channel]]),
+          channels, slackIdentity,
         });
         await app.ready();
       };
@@ -97,6 +137,9 @@ export const test = base.extend({
         poll: () => app.services.pollFeeds(),
         deliver: () => app.services.deliver(),
         failNextDelivery() { failNext = true; },
+        cancelNextSlackConsent() { cancelSlack = true; },
+        rateLimitNextSlackDelivery() { rateLimitSlack = true; },
+        slackMessages,
         async messages(destination = user) {
           const query = new URLSearchParams({ query: `to:${destination}` });
           const { messages } = await mailpit(`/api/v1/search?${query}`);
