@@ -233,3 +233,7 @@ The selected scenarios cover cancellation of delivery retries, cross-account acc
 ## Public RSS URLs
 
 The user requested support for arbitrary RSS URLs and an end-to-end test using the Hungarian Google News feed. Admins can now add public RSS URLs with query parameters. Public feeds use the publisher's current snapshot, and the synthetic feed still supports full replay. Playwright verified the live Google News URL through admin setup, a successful poll, and user subscription.
+
+## Screenshot evidence
+
+The user asked to rerun the end-to-end suite and capture every screen under `docs/evidences`. All 10 scenarios passed, including the live Google News check. The [evidence gallery](evidences/README.md) records the pages, dialogs, key review states, and the delivered demo email.

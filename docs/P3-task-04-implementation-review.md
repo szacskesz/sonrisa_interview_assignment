@@ -23,4 +23,4 @@ Both regression tests failed before their fixes and passed afterward. The review
 
 The browser walkthrough verified email delivery with the subscriber's browser page closed. The recovery run reopened SQLite twice and checked the exact subjects and recipient counts in Mailpit. The enabled feed replayed missed items after downtime, the late subscriber received only new items, and re-enabling established a fresh baseline.
 
-The [backend guide](P3-task-04-backend.md) documents setup, storage, API contracts, and adapter extension points. The [frontend guide](P3-task-04-frontend.md) documents startup, build, and browser testing. Human review screenshots and the formal verification record are scheduled for Phase 4.
+The [backend guide](P3-task-04-backend.md) documents setup, storage, API contracts, and adapter extension points. The [frontend guide](P3-task-04-frontend.md) documents startup, build, and browser testing. The [human review evidence](evidences/README.md) shows each application screen and the captured demo email, with the results of the expanded end-to-end suite.
