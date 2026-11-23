@@ -1,5 +1,5 @@
 import Fastify from 'fastify';
-import { openDatabase } from './database.js';
+import { migrateDatabase, openDatabase } from './database.js';
 
 /** Build the API for an HTTP listener or in-process request tests. */
 export function createApp({ databasePath = ':memory:', ...options } = {}) {
@@ -7,6 +7,7 @@ export function createApp({ databasePath = ':memory:', ...options } = {}) {
   const database = openDatabase(databasePath);
   app.decorate('database', database);
   app.addHook('onClose', async () => database.close());
+  app.addHook('onReady', async () => migrateDatabase(database));
   app.get('/api/health', async () => ({ status: 'ok' }));
   return app;
 }
