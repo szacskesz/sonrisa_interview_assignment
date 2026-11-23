@@ -59,3 +59,12 @@ I would like to use angular, nodejs and some lightweight database. I think for s
 ````
 
 Result: [Phase 1 World Event Alerts Design](P1-task-04-alerts-feature-design.md).
+
+## Phase 1 News source clarification
+
+```text
+- My mistake we dont realy need websocket for those alerts, just email and slack integrations are neccessary. So for now, scrap the webscoket idea (unless its necessary for something else.)
+- Can we integrate RSS for news events? What are the other possibilities?
+```
+
+Decision: use SMTP and Slack HTTPS for alerts and HTTP for the app. Plan an RSS adapter as the first live news integration, with a saved or synthetic feed for tests. Compare Atom, publisher and aggregator APIs, and HTTP push in the [updated design](P1-task-04-alerts-feature-design.md#news-feed-integration).

@@ -10,18 +10,18 @@ Users should be able to choose which events matter to them and receive alerts th
 | --- | --- | --- |
 | Users | Start with provisioned user and admin accounts. Users can create, edit, pause, resume, and remove their own subscriptions, choose destinations, and view recent alert status. | Exercises access control and the core workflow. Self-service registration, recovery, and organization management can follow. |
 | Importance | Each subscription selects an event type and a rule. Earthquakes use a minimum magnitude. News uses a publisher topic. Market movement uses a symbol and a minimum absolute percentage change between consecutive completed five-minute bars. Thresholds are inclusive. | Matching is predictable and testable. A news topic match carries no claim of editorial urgency. Each completed market interval can generate a new alert. |
-| Sources | Poll USGS for earthquakes of magnitude 4.5 and above. Use a separate replay adapter for clearly labeled sample news and market events. | Exercises two adapters and all three categories within the 24-hour assignment. Live news and market integrations depend on credentials, permitted use, and latency. |
+| Sources | Poll USGS for earthquakes of magnitude 4.5 and above. Plan one publisher RSS feed for live news and use saved feed responses for deterministic tests. Keep market events as clearly labeled replay samples. | Demonstrates distinct source adapters without credentials for a market feed. Live news depends on confirming a feed's terms for the intended delivery. |
 | Destinations | Email goes to the account's provisioned address. Slack users choose an allowed, named channel in one preconfigured workspace. A subscription can select either or both. | Supports real delivery with authorized credentials. Self-service Slack installation and direct messages require additional onboarding and permissions. |
 | Administration | A role-protected, read-only view shows source status and last successful ingestion, recent normalized events, and delivery outcomes and attempt history. | A reviewer can distinguish a source failure, a missing match, and a send failure. |
 | Speed and freshness | Poll USGS once a minute. Use a bounded catch-up window and backoff on failure. Initialize a checkpoint on first run to avoid alerting on the previous day's events. | The provisional target is queueing within two minutes of a qualifying event becoming visible in a healthy USGS feed. Measure this and set the freshness cutoff in Phase 2. |
 
-The design assumes one deployment, one Slack workspace, and low event volume. Alerts are informational. Live news and market sources can move into the first release if access and terms are confirmed early.
+The design assumes one deployment, one Slack workspace, and low event volume. Alerts are informational. If an RSS feed is unavailable or its terms do not cover the intended use, demonstrate the same adapter with synthetic RSS. A live market source can follow once access, terms, and latency are confirmed.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Sources["USGS and replay adapters"] --> Ingest["Normalize and match subscriptions"]
+    Sources["USGS, news feeds, and replay adapters"] --> Ingest["Normalize and match subscriptions"]
     Ingest --> Database[("SQLite")]
     Database --> Worker["Delivery worker"]
     Worker --> Email["Email via SMTP"]
@@ -54,21 +54,37 @@ Keep network calls outside database transactions. Retry transient failures with 
 | --- | --- | --- |
 | Earthquakes | **USGS GeoJSON**, the first live adapter. Poll an overlapping time window and map the feature ID, occurrence time, update time, and magnitude. [USGS feed documentation](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php) | The public past-day feed updates every minute. A fixed provider ID allows revised magnitudes to update the existing event. |
 | Other hazards | **National Weather Service API** for US weather alerts and **GDACS RSS or API** for more global hazards. [NWS API](https://www.weather.gov/documentation/services-web-api), [GDACS feed reference](https://www.gdacs.org/feed_reference.aspx) | Map severity, geography, updates, and cancellations per provider. Two providers reporting the same incident can create separate alerts until a correlation rule is established. |
-| News | Poll the **Guardian Open Platform** by topic or section. A permitted RSS or Atom feed can follow the same polling model with XML parsing and item IDs. [Guardian access terms and limits](https://open-platform.theguardian.com/access/) | Confirm the key tier, quota, and redistribution rights before sending publisher content through Slack or email. |
-| Market data | Poll **Alpha Vantage** for bars or receive **Alpaca** market data through WebSocket and build or consume completed bars. [Alpha Vantage API](https://www.alphavantage.co/documentation/), [Alpaca streaming market data](https://docs.alpaca.markets/us/docs/streaming-market-data) | REST is simpler. Streaming can reduce latency and requires reconnect, resubscribe, and gap recovery. Check entitlements, market hours, feed latency, and redistribution rights. |
+| News | Poll one approved **RSS** feed. Its configured topic becomes the subscription topic. [RSS 2.0 specification](https://www.rssboard.org/rss-specification) | Publisher coverage and update cadence determine what users get and how quickly. |
+| Market data | Replay sample events first. For live data, evaluate polling **Alpha Vantage** for completed five-minute bars. [Alpha Vantage API](https://www.alphavantage.co/documentation/#intraday) | Check feed entitlements, quotas, market hours, latency, and redistribution rights. |
 | Provider-defined triggers | **TradingView** can push prepared observations over HTTP POST when a configured alert fires. [TradingView webhook setup](https://www.tradingview.com/support/solutions/43000529348-how-to-configure-webhook-alerts/) | Push avoids polling and ties each trigger to provider-side setup. Confirm endpoint authentication and retry behavior before adopting it. |
 
-To add a source, register an adapter, define how it polls, streams, or receives events, and map its payload to a common event. Give the adapter its own timeout, backoff, checkpoint, and test fixtures so other sources can continue when it fails. A new provider for an existing event type reuses the existing rules. A new event type adds typed fields and a matching rule. To add a channel, register an adapter for destination validation, message formatting, and sending, with no change to source ingestion or matching.
+To add a source, register an adapter, define how it polls or receives events, and map its payload to a common event. Give the adapter its own timeout, backoff, checkpoint, and test fixtures so other sources can continue when it fails. A new provider for an existing event type reuses the existing rules. A new event type adds typed fields and a matching rule. To add a channel, register an adapter for destination validation, message formatting, and sending, with no change to source ingestion or matching.
 
-## Email Slack and WebSocket choices
+## News feed integration
+
+Configure feeds on the server with a stable source ID, URL, publisher label, and topic. Users subscribe to topics. Start with an official section or announcements feed, such as NASA News Releases for science and space. The Guardian publishes section feeds for personal, noncommercial use under its terms. Confirm that a feed permits the intended Slack and email use before enabling it. Send plain-text headlines, publisher attribution, and links where permitted. [NASA RSS feeds](https://www.nasa.gov/rss-feeds/), [Guardian RSS guidance](https://www.theguardian.com/help/feeds)
+
+Poll each configured feed once for all subscribers. Start at five minutes and respect publisher cache guidance. Use Node fetch with timeouts and backoff, and conditional HTTP requests when the feed supplies validators such as ETag or Last-Modified. Evaluate **Feedsmith** in Phase 2 as a typed parser for RSS and Atom. Keep HTTP fetching and parser calls inside the source adapter. [Feedsmith parser API](https://feedsmith.dev/parsing)
+
+On the first successful poll, record existing items as seen so enabling a feed does not send its backlog. On later polls, use the feed ID plus the RSS GUID or Atom entry ID for deduplication. Fall back to the normalized article URL when there is no ID. Use publication time when available and keep first-seen time distinct when the date is missing. Validate entries before matching them. An edited headline with the same item ID stays one event. Different articles about the same story may each alert. [RSS item fields](https://www.rssboard.org/rss-specification#hrelementsOfLtitemgt), [Atom format](https://www.rfc-editor.org/rfc/rfc4287)
+
+| Alternative | When to use it |
+| --- | --- |
+| Atom feeds | The same fetching and matching pipeline can accept Atom when a publisher uses it. Map entry IDs, alternate links, and publication times to the same news event. [Atom format](https://www.rfc-editor.org/rfc/rfc4287) |
+| Publisher API | The **Guardian Open Platform** offers structured topics and search from one publisher. Use it when RSS sections are too broad. It requires a key and a suitable access tier. [Guardian Open Platform](https://open-platform.theguardian.com/access/) |
+| Multi-publisher API | **NewsAPI Top Headlines** offers broader coverage and filters by country, category, or source. Review latency, costs, and content rights. Its Developer plan is for development and testing only. [Top Headlines endpoint](https://newsapi.org/docs/endpoints/top-headlines), [NewsAPI plan terms](https://newsapi.org/pricing) |
+| HTTP push | **WebSub** can reduce polling delay when the publisher's feed advertises a compatible hub. It adds a public HTTPS callback and subscription management. [W3C WebSub](https://www.w3.org/TR/websub/) |
+
+A feed item is a published headline or announcement. Use a publisher-curated top-headlines source if users need editorial urgency. The default is a topic match.
+
+## Email and Slack delivery
 
 | Use | Choice and alternatives |
 | --- | --- |
 | Email | Use **Nodemailer over SMTP**. A configured relay handles external email. **Mailpit** captures local email for automated tests. **Resend** offers an HTTP API if provider-specific features become useful. [Nodemailer](https://nodemailer.com/smtp), [Mailpit](https://mailpit.axllent.org/docs/), [Resend send API](https://resend.com/docs/api-reference/emails/send-email) |
 | Slack | Use **Incoming Webhooks** over HTTPS and keep URLs server-side behind destination aliases. Each webhook posts to its configured channel. Node fetch is enough for a POST. **@slack/webhook** is the official helper. **@slack/web-api** and **chat.postMessage** support choosing authorized conversation IDs with an installed app. [Slack Incoming Webhooks](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/), [Slack webhook SDK](https://docs.slack.dev/tools/node-slack-sdk/webhook/), [Slack message posting](https://docs.slack.dev/reference/methods/chat.postMessage/) |
-| Live browser updates | Start with HTTP refresh. If live updates become useful, **ws** and the browser WebSocket API provide a small protocol, while **Socket.IO** provides reconnect and event routing facilities. In both cases the browser reloads persisted status on reconnect. [ws](https://github.com/websockets/ws), [Socket.IO delivery guarantees](https://socket.io/docs/v4/delivery-guarantees/) |
 
-A WebSocket fits an upstream market feed or an optional live browser view. The delivery worker uses the email and Slack transports and runs while the user's browser is closed. Slack Socket Mode carries Slack events and interactions into the app. Outbound messages use the webhook or messaging API. [Slack Socket Mode](https://docs.slack.dev/apis/events-api/using-socket-mode/)
+The delivery worker runs independently of the browser. The user and admin views read saved status through HTTP. No current component requires WebSockets.
 
 ## Stack decisions and feasibility
 
@@ -81,12 +97,12 @@ A WebSocket fits an upstream market feed or an optional live browser view. The d
 
 Checks performed on 23 November 2026 covered documentation compatibility, the local SQLite capabilities, and the public USGS response shape. Phase 2 should verify on-disk restart and job recovery, normalization against saved source data, SMTP delivery to Mailpit, and Slack success and retry handling against a local HTTP stub. Verify real email and Slack delivery using authorized test destinations when credentials are available.
 
-Three checks changed the design. Slack documents Socket Mode as an inbound connection, so the worker posts through HTTPS. The USGS response gives both occurrence and update times, so revisions can update an existing event without treating each poll as a new occurrence. SQLite supplies the transaction and uniqueness constraints this design needs, so a separate broker and database service can wait until there is evidence of a scaling need.
+The USGS response gives both occurrence and update times, so revisions can update an existing event without treating each poll as a new occurrence. SQLite supplies the transaction and uniqueness constraints this design needs, so a separate broker and database service can wait until there is evidence of a scaling need. The RSS specification allows items without a GUID or publication date, so the adapter needs URL and first-seen fallbacks. Phase 2 should verify the selected live feed and exercise startup, repeated polls, and missing fields using saved or synthetic XML.
 
 ## Acceptance criteria
 
 1. A user can create, edit, pause, resume, and remove their own subscription with a valid rule and at least one authorized destination. Settings survive restart. A regular user is denied access to another user's subscriptions and admin APIs.
-2. An eligible USGS event and representative replayed news and market events trigger matching subscriptions. Below-threshold, unrelated, paused, and stale cases produce no sends. Repeated ingestion produces one job per destination. A qualifying revision can produce the first job.
+2. An eligible USGS event, a new RSS item, and a representative replayed market event trigger matching subscriptions. Feed startup does not send existing headlines. Below-threshold, unrelated, paused, and stale cases produce no sends. Repeated ingestion produces one job per destination. A qualifying revision can produce the first job.
 3. A matching alert can produce independent email and Slack messages with the browser closed. Each identifies the event, the relevant measurement or topic, and the source when available. A shared Slack message excludes personal subscription settings. One channel can fail while the other succeeds.
 4. Pending jobs survive restart. Transient failures retry within the configured limit and permanent failures are visible. Administrators can inspect source health, event records, and delivery attempts. Credentials stay server-side.
 5. A second source integrates through the same ingestion contract. A test delivery adapter plugs into the worker using the same matching logic. Unit and end-to-end tests cover supported workflows and failure cases using deterministic inputs.
@@ -101,4 +117,4 @@ Three checks changed the design. Slack documents Socket Mode as an inbound conne
 | P4 Verify and review | Full test suites, fixes with regression tests, review evidence, and screenshots of changed UI elements. Record findings and any human review changes. | 4 hours |
 | P5 Deliver | Setup and operation instructions, known limits, follow-up work, and the repository and milestone history required for submission. | 2 hours |
 
-If time is tight, preserve the deterministic end-to-end demo, both delivery paths, admin diagnostics, and verification evidence. Defer live news and market sources, live UI updates, and Slack self-service. Keep the prompt history and decision record current so reviewers can see what was tested, what was rejected, and why.
+If time is tight, preserve the deterministic end-to-end demo, including RSS fixtures, both delivery paths, admin diagnostics, and verification evidence. Defer a live market source, extra news feeds, and Slack self-service. Keep the prompt history and decision record current so reviewers can see what was tested, what was rejected, and why.
