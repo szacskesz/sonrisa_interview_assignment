@@ -13,4 +13,6 @@ Open `http://127.0.0.1:4200`. Angular uses standalone components and route confi
 
 The development server proxies `/api/**` to `http://127.0.0.1:3000`. The session client calls the API on the same origin and keeps only the current account in memory. The browser manages the session cookie. A failed current-account lookup with HTTP 401 clears the account, while other failures remain available to callers.
 
+The subscriptions client lists available topics and current-account subscriptions, and sends topic and status changes through the API. API errors retain their public code and message for form feedback. Network errors and unexpected response bodies use a fallback message.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
