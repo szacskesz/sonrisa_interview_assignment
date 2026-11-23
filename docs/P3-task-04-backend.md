@@ -21,3 +21,5 @@ Set `DEMO_ADMIN_PASSWORD` and `DEMO_USER_PASSWORD` to local demo secrets of 12 t
 ## Fake RSS
 
 Run `pnpm --dir backend fake-rss` in a separate terminal. By default it serves `http://127.0.0.1:18080/rss.xml`. Set `FAKE_RSS_PORT` to change the port. The base URL returns the latest UTC minute headline, such as `News 2026-11-23T09:02:00.000Z`. Supplying both `after` and `through` as UTC minute timestamps returns up to 100 items in publication order. The lower bound is exclusive and the upper bound is inclusive.
+
+The RSS adapter exposes `latest()` for the publication timestamp or an empty snapshot, and `page(after, through)` for normalized articles containing an ID, title, optional URL, and publication timestamp. The adapter rejects failed requests, redirects, malformed documents, and incomplete or unordered fixture pages. It has no access to subscriptions or delivery channels.
