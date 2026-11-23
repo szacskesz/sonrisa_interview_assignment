@@ -12,7 +12,10 @@ export const routes: Routes = [
     path: 'admin/feeds', title: 'RSS feeds', canActivate: [requireRole('admin')],
     loadComponent: () => import('./admin/feeds-page/feeds-page').then((module) => module.FeedsPage),
   },
-  { path: 'admin/deliveries', title: 'Deliveries', canActivate: [requireRole('admin')], component: RouteState },
+  {
+    path: 'admin/deliveries', title: 'Deliveries', canActivate: [requireRole('admin')],
+    loadComponent: () => import('./admin/deliveries-page/deliveries-page').then((module) => module.DeliveriesPage),
+  },
   { path: 'access-denied', title: 'Access denied', component: RouteState },
   { path: '', pathMatch: 'full', redirectTo: '/sign-in' },
   { path: '**', redirectTo: '/sign-in' },

@@ -1,0 +1,36 @@
+<div class="screen-heading"><h1>Deliveries</h1></div>
+@if (refreshError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+@if (loading()) {
+  <p class="state-panel" role="status">Loading deliveries…</p>
+} @else if (loadError(); as message) {
+  <section class="state-panel">
+    <h2>Deliveries unavailable</h2>
+    <p role="alert">{{ message }}</p>
+    <button type="button" (click)="load()">Try again</button>
+  </section>
+} @else if (rows().length === 0) {
+  <section class="state-panel"><h2>No deliveries yet</h2><p>Matching headlines will appear here when email is queued.</p></section>
+} @else {
+  <div class="table-frame">
+    <table class="deliveries-table" aria-label="Recent deliveries" role="table">
+      <colgroup><col><col><col><col><col></colgroup>
+      <thead role="rowgroup"><tr role="row">
+        <th scope="col" role="columnheader">Headline</th><th scope="col" role="columnheader">Source</th>
+        <th scope="col" role="columnheader">Status</th><th scope="col" role="columnheader">Attempts</th>
+        <th scope="col" role="columnheader">Latest error</th>
+      </tr></thead>
+      <tbody role="rowgroup">
+        @for (row of rows(); track row.id) {
+          <tr role="row">
+            <td role="cell" data-label="Headline">{{ row.title }}</td>
+            <td role="cell" data-label="Source">{{ row.publisher }}</td>
+            <td role="cell" data-label="Status"><span class="badge" [class.good]="row.status === 'sent'"
+              [class.bad]="row.status === 'failed'" [class.warning]="row.status === 'pending' && row.attemptCount > 0">{{ label(row) }}</span></td>
+            <td role="cell" data-label="Attempts">{{ row.attemptCount }}</td>
+            <td role="cell" data-label="Latest error">{{ row.lastError || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

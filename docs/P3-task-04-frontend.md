@@ -25,4 +25,6 @@ The subscriptions page shows the provisioned email, topic, current status, and a
 
 The RSS feeds page lets admins add, edit, enable, and disable feeds. It refreshes poll health every five seconds while open and shows the last success, failed attempt details, and next poll time in UTC.
 
+The deliveries page refreshes while open and displays the latest headline, source, delivery status, attempt count, and last error. Pending jobs with earlier attempts are shown as retrying.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)

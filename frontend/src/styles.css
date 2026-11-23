@@ -72,9 +72,13 @@ td small { display: block; margin-top: 3px; line-height: 1.4; }
 .subscriptions-table col:nth-child(1), .subscriptions-table col:nth-child(4) { width: 28%; }
 .feeds-table col:nth-child(1) { width: 32%; }
 .feeds-table col:nth-child(3) { width: 28%; }
+.deliveries-table col:nth-child(1) { width: 35%; }
+.deliveries-table col:nth-child(4) { width: 10%; }
+.deliveries-table col:nth-child(5) { width: 25%; }
 .badge { display: inline-block; padding: 2px 7px; background: #eef1f5; border: 1px solid #ccd5df; border-radius: 5px; font-size: .8rem; white-space: nowrap; }
 .badge.good { color: #245645; background: #eaf4ee; border-color: #c1dbcc; }
 .badge.bad { color: #792b35; background: #fbeced; border-color: #e9c7cb; }
+.badge.warning { color: #634419; background: #f8f1e3; border-color: #e4d4ad; }
 .feed-hint { margin: -5px 0 10px; }
 .checkbox { display: flex; align-items: center; gap: 8px; }
 input[type='checkbox'] { width: auto; }
