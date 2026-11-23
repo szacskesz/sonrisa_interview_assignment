@@ -1,6 +1,6 @@
 # World Event Alerts
 
-World Event Alerts lets administrators configure RSS feeds and lets users subscribe to topics for email alerts. The local demo includes a synthetic news feed and uses Mailpit to capture the emails.
+World Event Alerts lets administrators configure RSS and USGS earthquake sources and lets users subscribe to topics for email alerts. The local demo includes a synthetic news feed and uses Mailpit to capture the emails.
 
 ## Prerequisites
 
@@ -67,12 +67,18 @@ In another terminal, start the fake RSS service.
 pnpm --dir backend fake-rss
 ```
 
-1. Sign in as `admin@example.test` and select **Feeds → Add feed**. Enter `http://127.0.0.1:18080/rss.xml` as the URL, `Sonrisa Demo News` as the publisher, `World News` as the topic, and `60` as the polling interval in seconds. Leave the feed enabled and save.
+1. Sign in as `admin@example.test` and select **Sources → Add source → RSS**. Enter `http://127.0.0.1:18080/rss.xml` as the URL, `Sonrisa Demo News` as the publisher, `World News` as the topic, and `60` as the polling interval in seconds. Leave the feed enabled and save.
 2. Wait for the feed to show **Healthy**. The first successful poll establishes a baseline.
 3. Sign in as `user@example.test`, choose **Add subscription**, and save the `World News` topic.
 4. Wait for the fixture to publish a headline after the subscription activates and for the next scheduled poll. Check the [Mailpit inbox](http://127.0.0.1:18025) for an email to `user@example.test` with a subject such as `News 2026-11-23T09:02:00.000Z`. Sign in as the admin again and open **Deliveries** to see its **Sent** status.
 
-You can also add a public RSS URL directly in **Feeds**, including the [Hungarian Google News feed](https://news.google.com/rss?hl=hu&gl=HU&ceid=HU:hu). The first poll establishes a baseline. Later polls pick up new items that still appear in the publisher's feed.
+You can also add a public RSS URL directly in **Sources**, including the [Hungarian Google News feed](https://news.google.com/rss?hl=hu&gl=HU&ceid=HU:hu). The first poll establishes a baseline. Later polls pick up new items that still appear in the publisher's feed.
+
+## Try USGS earthquake alerts
+
+1. As the admin, open **Sources → Add source → USGS Earthquakes**. Leave the source enabled and save it. The default interval is 60 seconds and the source covers worldwide magnitude 4.5 and above.
+2. Wait for the source to show **Healthy**, then sign in as the user and subscribe to **Earthquakes**.
+3. New qualifying earthquakes appear in **Deliveries** and the Mailpit inbox. The automated earthquake scenario uses a controlled event so it can demonstrate delivery on demand. See the [USGS evidence](docs/evidences/usgs/README.md).
 
 ## Run tests
 
@@ -93,6 +99,6 @@ pnpm --dir frontend e2e
 
 To use an installed Microsoft Edge instead, set `TEST_BROWSER_CHANNEL=msedge` before running the suite. Set `TEST_MAILPIT_URL=http://127.0.0.1:18025` before running the backend tests to include their SMTP integration check.
 
-Set `TEST_LIVE_RSS=1` before running the Playwright suite to include the live Google News scenario. It requires internet access to Google News.
+Set `TEST_LIVE_RSS=1` to include the live Google News check and `TEST_LIVE_USGS=1` to include the live USGS check. Each check requires internet access to its provider.
 
 See the [backend guide](docs/P3-task-04-backend.md) for configuration and API details and the [frontend guide](docs/P3-task-04-frontend.md) for browser test coverage.

@@ -34,7 +34,7 @@ Admins can use public HTTP or HTTPS RSS URLs, including URLs with query paramete
 
 The feed store enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps its checkpoint. Re-enabling or replacing the URL clears the baseline and prior poll health.
 
-`GET /api/admin/feeds` returns `{feeds}`. `POST /api/admin/feeds` takes `url`, `publisher`, `topic`, and optional `enabled` and `pollIntervalSeconds`. It returns the created feed with HTTP 201. `PATCH /api/admin/feeds/:id` accepts changes to these fields and returns the updated feed. Feed responses also include `id`, `nextPollAt`, `lastPollAttemptAt`, `lastPollSuccessAt`, and `lastPollError`. Timestamps use UTC Unix milliseconds. Duplicate URLs return HTTP 409 and other invalid settings return HTTP 400.
+`GET /api/admin/feeds` returns `{feeds}`. For RSS, `POST /api/admin/feeds` takes `url`, `publisher`, `topic`, and optional `enabled` and `pollIntervalSeconds`. For earthquakes, send `{"sourceKind":"usgs"}` with optional `enabled` and `pollIntervalSeconds`. Creation returns HTTP 201. `PATCH /api/admin/feeds/:id` updates RSS settings or the USGS interval and enabled status. Responses include `id`, `sourceKind`, `nextPollAt`, `lastPollAttemptAt`, `lastPollSuccessAt`, and `lastPollError`. Timestamps use UTC Unix milliseconds. Duplicate sources return HTTP 409 and invalid settings return HTTP 400. See the [USGS workflow](USGS-earthquake-alerts.md) for the scan checkpoint and recovery policy.
 
 ## Subscriptions
 

@@ -25,3 +25,5 @@ The existing admin API accepts a source kind when creating a source and returns 
 2. Connect the adapter to source configuration, polling, deduplication, and email. Test baselines, activation, recovery, revisions, and preservation of RSS behavior.
 3. Add the Angular source picker and USGS settings. Test the form and the existing admin outcomes.
 4. Run the controlled browser-to-Mailpit scenario and a separate live USGS check. Rerun the full suites and capture human review screenshots.
+
+The implementation review added regression tests for a catalog range ending exactly on a day boundary and an empty scan finishing after its recorded boundary. See the [review evidence](evidences/usgs/README.md).

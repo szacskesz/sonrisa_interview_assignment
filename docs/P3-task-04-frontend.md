@@ -23,7 +23,7 @@ The sign-in page uses Signal Forms. The shell shows navigation for the current a
 
 The subscriptions page shows the provisioned email, topic, current status, and activation time in UTC. Add and edit use a topic dialog. Pause and resume apply immediately, and removal asks for confirmation. Existing subscriptions remain visible when no feed offers their topic.
 
-The RSS feeds page lets admins add, edit, enable, and disable feeds. It refreshes poll health every five seconds while open and shows the last success, failed attempt details, and next poll time in UTC.
+The Sources page lets admins add, edit, enable, and disable RSS and USGS sources. It refreshes poll health every five seconds while open and shows the last success, failed attempt details, and next poll time in UTC.
 
 The deliveries page refreshes while open and displays the latest headline, source, delivery status, attempt count, and last error. Pending jobs with earlier attempts are shown as retrying.
 
@@ -36,5 +36,7 @@ The suite covers the automatic browser demo, multi-page restart recovery, strict
 The additional scenarios verify shared RSS polling across multiple feeds and subscribers (E1), a browser topic edit and its activation cutoff (E2), recovery after an RSS replay page returns HTTP 503 (E3), cancellation of a queued retry after pause or removal (E5), and subscription ownership and admin permissions over HTTP (E7). The test feed endpoints record actual RSS requests so the tests can check replay cursors and polling frequency.
 
 Set `TEST_LIVE_RSS=1` when running Playwright to also test saving and polling the live Hungarian Google News URL through the admin screen. This scenario requires internet access to Google News.
+
+Set `TEST_LIVE_USGS=1` to verify polling the real USGS endpoint. The standard suite also uses controlled GeoJSON to verify the Sources-to-Mailpit workflow. [USGS browser evidence](evidences/usgs/README.md)
 
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
