@@ -38,6 +38,8 @@ The queue deduplicates by feed, source URL, item ID, channel, and destination. E
 
 The email channel sends a plain-text alert with the headline as subject and the headline, topic, source, and optional item URL in the body. It reports success, retryable failure, or permanent failure without storing SMTP response text. With Mailpit running, set `TEST_MAILPIT_URL=http://127.0.0.1:18025` and run the backend tests to include the real SMTP and inbox check.
 
+The API process checks for due deliveries once per second. The worker cancels a job whose recipient no longer matches the subscription rules. It retries temporary failures up to five total attempts with exponential backoff starting at five seconds, and records permanent failures immediately. The local SMTP defaults are `127.0.0.1:11025` and sender `alerts@example.test`. Change them with `SMTP_HOST`, `SMTP_PORT`, and `SMTP_FROM`.
+
 ## Replay and checkpoints
 
 The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.

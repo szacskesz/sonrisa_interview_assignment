@@ -1,10 +1,16 @@
 import { createApp } from './app.js';
 import { configuredDatabasePath } from './database.js';
+import { createEmailChannel } from './email-channel.js';
 
 const app = createApp({
   databasePath: configuredDatabasePath(),
   startBackground: true,
   trustedUrls: process.env.TRUSTED_RSS_URLS?.split(',').map((url) => url.trim()),
+  channels: new Map([['email', createEmailChannel({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT ?? 11025),
+    from: process.env.SMTP_FROM,
+  })]]),
   logger: true,
   disableRequestLogging: true,
 });

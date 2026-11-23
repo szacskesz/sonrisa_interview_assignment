@@ -25,7 +25,8 @@ export function createDeliveryQueue(database) {
     WHERE id = ? AND status = 'pending'
   `);
   const recover = database.prepare(`
-    UPDATE delivery_jobs SET status = 'pending', next_attempt_at_ms = ?,
+    UPDATE delivery_jobs SET status = CASE WHEN attempt_count >= ? THEN 'failed' ELSE 'pending' END,
+      next_attempt_at_ms = CASE WHEN attempt_count >= ? THEN NULL ELSE ? END,
       last_error = 'Previous delivery attempt was interrupted'
     WHERE status = 'sending'
   `);
@@ -40,6 +41,6 @@ export function createDeliveryQueue(database) {
     finish(job, { status, nextAttemptAt = null, sentAt = null, lastError = null }) {
       return finish.run(status, nextAttemptAt, sentAt, lastError, job.id, job.attempt_count).changes > 0;
     },
-    recoverInterrupted: (now) => recover.run(now).changes,
+    recoverInterrupted: (now, maxAttempts = Number.MAX_SAFE_INTEGER) => recover.run(maxAttempts, maxAttempts, now).changes,
   };
 }
