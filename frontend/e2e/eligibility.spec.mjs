@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
-import { account, configureFeed, minute, subscribe, title } from './demo-api.mjs';
-import { test } from './demo-fixture.mjs';
+import { account, configureFeed, minute, subjects, subscribe, title } from './demo-api.mjs';
+import { signIn, test } from './demo-fixture.mjs';
 
 test('E5 cancels an attempted delivery when the only matching subscription is paused or removed', async ({ demo }) => {
   await demo.stop();
@@ -37,6 +37,54 @@ test('E5 cancels an attempted delivery when the only matching subscription is pa
         }
       });
     }
+  } finally {
+    await Promise.all([admin.dispose(), user.dispose()]);
+  }
+});
+
+test('E2 switches topics in the browser and delivers only news after the new activation', async ({ demo, page }) => {
+  await demo.stop();
+  const markets = await demo.addFeed();
+  await demo.start();
+  const admin = await account(demo, demo.admin);
+  const user = await account(demo, demo.user);
+  try {
+    await configureFeed(demo, admin, { publisher: 'World desk' });
+    await configureFeed(demo, admin, { url: markets.url, topic: 'Markets', publisher: 'Markets desk' });
+    await demo.poll();
+    const subscription = await subscribe(user);
+    demo.advance(minute);
+    const first = title(demo.now());
+    await demo.poll();
+    await demo.deliver();
+    expect(await subjects(demo)).toEqual([first]);
+
+    // Leave two headlines unpolled, including one published exactly at the edit time.
+    demo.advance(2 * minute);
+    const editedAt = demo.now();
+    await signIn(page, demo, demo.user);
+    await page.getByRole('row').filter({ hasText: 'World News' }).getByRole('button', { name: 'Edit' }).click();
+    const editor = page.getByRole('dialog', { name: 'Edit subscription' });
+    await editor.getByRole('combobox', { name: 'Topic' }).selectOption('Markets');
+    await editor.getByRole('button', { name: 'Save subscription' }).click();
+    await expect(page.getByText('Subscription updated.')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Markets', exact: true })).toBeVisible();
+    expect(await (await user.get('/api/subscriptions')).json()).toEqual({
+      subscriptions: [{ ...subscription, topic: 'Markets', activatedAt: editedAt }],
+    });
+
+    demo.advance(minute);
+    const next = title(demo.now());
+    await demo.poll();
+    await demo.deliver();
+    expect(await subjects(demo)).toEqual([first, next]);
+    const { deliveries } = await (await admin.get('/api/admin/deliveries')).json();
+    expect(deliveries).toMatchObject([
+      { title: next, publisher: 'Markets desk', status: 'sent', attemptCount: 1 },
+      { title: first, publisher: 'World desk', status: 'sent', attemptCount: 1 },
+    ]);
+    const email = (await demo.messages()).find(({ Subject }) => Subject === next);
+    expect((await demo.message(email.ID)).Text).toContain('Topic: Markets');
   } finally {
     await Promise.all([admin.dispose(), user.dispose()]);
   }

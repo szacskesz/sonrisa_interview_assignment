@@ -223,3 +223,9 @@ Decision: the first successful poll after re-enabling establishes a fresh baseli
 > Okey, Continue with phase 3. For now please dont run parallel subagent on distinct/separate tasks, because the project is small its easier to work this way (without worktrees). So implement the tasks in the planned order one after one. If you have questions ask rather than assuming or creating workarounds.
 
 The implementation followed the numbered tasks sequentially in one workspace. The [Phase 3 implementation review](P3-task-04-implementation-review.md) records the verified findings, their regression tests, and the browser demo results.
+
+## Additional end-to-end tests
+
+> pls implement these E5, E7, E3, E1, E2
+
+The selected scenarios cover cancellation of delivery retries, cross-account access, RSS replay recovery, polling shared across subscribers, and subscription topic changes. See the [browser test guide](P3-task-04-frontend.md#browser-tests).

@@ -33,4 +33,6 @@ With Mailpit running, install Chromium once with `pnpm --dir frontend exec playw
 
 The suite covers the automatic browser demo, multi-page restart recovery, strict activation, SMTP retry across a second restart, overlap deduplication, a fresh baseline after re-enable, and no email while paused or after removal. It also checks admin feed edits, duplicate URL feedback, and the UI response when a protected request loses its session. Controlled clocks advance the fake feed without waiting for wall-clock minutes.
 
+The additional scenarios verify shared RSS polling across multiple feeds and subscribers (E1), a browser topic edit and its activation cutoff (E2), recovery after an RSS replay page returns HTTP 503 (E3), cancellation of a queued retry after pause or removal (E5), and subscription ownership and admin permissions over HTTP (E7). The test feed endpoints record actual RSS requests so the tests can check replay cursors and polling frequency.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
