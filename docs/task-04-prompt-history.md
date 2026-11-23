@@ -199,3 +199,11 @@ Decision: keep a small delivery job table, store the retry summary on each job, 
 ```
 
 Result: the [wireframes](P2-task-04-ui-wireframes.html) show sign-in, subscriptions, admin feeds, and admin deliveries, including forms and alternate states. The SQL approval and screen review are recorded before Phase 3 implementation.
+
+## Phase 2 Final readiness review
+
+```text
+Wireframes look good to me. Anything else needs to be discussed before implementation? Any opne questions remaining?
+```
+
+The SQL schema and wireframes are approved, and the proof of concept verified RSS catch-up through SMTP. Phase 3 setup can proceed. One behavior remains to confirm before implementing feed scheduling: whether re-enabling a feed should replay items from its disabled period or establish a fresh baseline. The recommendation is to establish a fresh baseline after an intentional disable and retain full catch-up for service outages.
