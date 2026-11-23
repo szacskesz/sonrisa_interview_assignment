@@ -25,3 +25,7 @@ Run `pnpm --dir backend fake-rss` in a separate terminal. By default it serves `
 The RSS adapter exposes `latest()` for the publication timestamp or an empty snapshot, and `page(after, through)` for normalized articles containing an ID, title, optional URL, and publication timestamp. The adapter rejects failed requests, redirects, malformed documents, and incomplete or unordered fixture pages. It has no access to subscriptions or delivery channels.
 
 The feed store accepts only configured fixture URLs and enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps the article checkpoint. Re-enabling or replacing the URL clears the baseline and prior poll health.
+
+## Subscriptions
+
+The subscription store scopes reads and writes to the owner's account ID. Creation starts active. Resuming or changing the topic records a new activation time. Pausing preserves the previous activation time, and removing a subscription deletes the record.
