@@ -51,7 +51,7 @@ The diagram shows the stored foreign keys. The app matches subscriptions to all 
 
 ## Rules to verify
 
-- **One checkpoint per feed.** The first successful poll writes the checkpoint and creates no jobs. Later pages update the checkpoint in the same transaction as their delivery jobs. SQLite keeps no RSS article archive or per-item seen history.
+- **One checkpoint per feed.** The first successful poll after adding or re-enabling a feed writes the checkpoint and creates no jobs. Later pages update the checkpoint in the same transaction as their delivery jobs. SQLite keeps no RSS article archive or per-item seen history.
 - **One job per item and destination.** The unique key combines feed, source URL, item ID, channel, and destination. Including the source URL keeps two sources from colliding if an admin replaces the URL on a feed and both sources use the same item ID. The job keeps a snapshot of its source URL and publisher for review.
 - **Eligibility starts at activation.** The app matches items published strictly after the latest activation time. Before a send or retry, it looks up current subscriptions by the queued recipient and topic and checks the item's publication time. It cancels the job if none qualify. Store timestamps as UTC Unix milliseconds.
 - **Extensibility stays at the adapter boundary.** The demo uses an RSS source and an email channel. The feed kind and job channel identify the registered adapters. Destination validation and message formatting belong to the delivery adapter.

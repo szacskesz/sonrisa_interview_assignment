@@ -207,3 +207,13 @@ Wireframes look good to me. Anything else needs to be discussed before implement
 ```
 
 The SQL schema and wireframes are approved, and the proof of concept verified RSS catch-up through SMTP. Phase 3 setup can proceed. One behavior remains to confirm before implementing feed scheduling: whether re-enabling a feed should replay items from its disabled period or establish a fresh baseline. The recommendation is to establish a fresh baseline after an intentional disable and retain full catch-up for service outages.
+
+## Phase 2 Final scheduling decision
+
+```text
+**`When an admin re-enables a feed, should it send headlines published while it was disabled, or start fresh from the first successful poll?`**   > start fresh.
+
+If no more questions let me know and i will advnace to phase 3
+```
+
+Decision: the first successful poll after re-enabling establishes a fresh baseline without sending older items. A feed that stays enabled through an outage still catches up from the saved checkpoint. The design review has no remaining product questions. Phase 3 awaits the user's instruction to begin.
