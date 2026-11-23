@@ -245,3 +245,5 @@ The user approved worldwide magnitude 4.5+ earthquake alerts and the proposed ad
 ## Slack delivery planning
 
 The user confirmed the USGS workflow after manual testing and requested user-selectable Email and Slack delivery. The [Slack alert delivery plan](slack-alerts-plan.md) proposes per-subscription checkboxes, verified Slack account linking, and direct messages from a bot in one configured workspace. Implementation follows review of the plan.
+
+During review, the user specified that each app user can link at most one Slack account. The plan now stores that link on the existing user row and enforces uniqueness across users for the workspace/member pair.

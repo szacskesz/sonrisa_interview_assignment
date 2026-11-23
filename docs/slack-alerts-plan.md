@@ -31,10 +31,12 @@ Per-subscription settings let a user receive high-priority earthquake alerts in 
 | Record | Proposed change |
 | --- | --- |
 | `subscription_channels` | Add one row per selected channel and subscription, with `channel` and `activated_at_ms`. Use the subscription and channel as the key and remove its rows when the subscription is removed. Backfill every existing subscription with Email and its existing activation time in the same migration. |
-| `slack_connections` | Add a single link per app account with Slack workspace ID, member ID, and connection time. Enforce one app account per workspace/member pair. Store neither bot secrets nor OAuth tokens in this table. |
+| `users` | Add nullable `slack_workspace_id`, `slack_member_id`, and `slack_connected_at_ms` columns. Each user row holds at most one Slack account. A check constraint requires all three fields to be set together or all three to be empty. A unique index on the workspace and member pair prevents linking that Slack account to multiple app users. |
 | `delivery_jobs` | Reuse the existing channel, destination, deduplication key, status, and retry fields. Use an internal workspace/member pair as the Slack destination and expose the channel in the existing admin response. |
 
 Add `channels` to subscription responses and to create and edit requests. Omitted channels default to Email on creation and preserve existing choices on edit. Validate the supported values, account ownership, and the presence of at least one selection. Add account-scoped endpoints for Slack connection status, starting and confirming a link, handling the provider callback, and disconnecting. Keep credentials and provider tokens out of user and admin responses and logs.
+
+Existing user rows start with all three Slack fields empty. Connecting sets them in one atomic update and disconnecting clears them together. The bot token and OAuth credentials stay in server configuration.
 
 ## Matching, activation, and retries
 
@@ -47,7 +49,7 @@ Register Slack alongside the email adapter. Reuse the durable queue for retryabl
 | ID | Task | Completion check |
 | --- | --- | --- |
 | SLACK-02 | Verify provider setup in a test workspace | Validate the callback and required identity claims, verify bot scopes, and send a synthetic DM to an explicitly authorized test member. Confirm Node 24 compatibility before pinning the Slack and OpenID dependencies. |
-| SLACK-03 | Add and verify the SQLite migration | Existing subscriptions stay active on Email and retain their original activation times. |
+| SLACK-03 | Add and verify the SQLite migration | Existing subscriptions retain their Email activation times. User rows accept one complete Slack link and reject duplicate workspace/member pairs. |
 | SLACK-04 | Implement account linking | Verify connection state, consent, ownership, expiry, replay protection, disconnect, and workspace/member restrictions. |
 | SLACK-05 | Implement subscription channel settings | Validate create and edit requests, and preserve compatibility with existing Email clients. |
 | SLACK-06 | Extend matching and the queue | Verify Email-only, Slack-only, both, newly enabled channels, reconnect cutoffs, and deduplication. |
@@ -59,4 +61,4 @@ Use Mailpit and a controlled Slack API response for repeatable automated deliver
 
 ## Review decisions
 
-The plan proposes **channel choices per subscription** and **direct messages in one configured Slack workspace**. Confirm these choices before implementation.
+The plan uses one Slack account per app user, stored on the user row. The remaining proposals for review are **channel choices per subscription** and **direct messages in one configured Slack workspace**.
