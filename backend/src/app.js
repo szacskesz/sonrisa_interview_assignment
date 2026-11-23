@@ -13,6 +13,7 @@ import { startPeriodicTask } from './periodic-task.js';
 import { createRssSource } from './rss-source.js';
 import { configureSessionApi } from './session-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
+import { configureTopicsApi } from './topics-api.js';
 
 /** Build the API for an HTTP listener or in-process request tests. */
 export function createApp({
@@ -23,6 +24,7 @@ export function createApp({
   const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } }, ...options });
   configureApiErrors(app);
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
+  configureTopicsApi(app);
   const database = openDatabase(databasePath);
   app.decorate('database', database);
   app.decorate('services', null);

@@ -22,6 +22,8 @@ export function createFeedStore(database, { trustedUrls = [defaultFixtureUrl], n
   const select = database.prepare('SELECT * FROM feeds WHERE id = ?');
   const byUrl = database.prepare('SELECT id FROM feeds WHERE url = ?');
   const list = database.prepare('SELECT * FROM feeds ORDER BY id');
+  const topics = database.prepare('SELECT DISTINCT topic FROM feeds WHERE enabled = 1 ORDER BY topic COLLATE NOCASE, topic');
+  const hasTopic = database.prepare('SELECT 1 FROM feeds WHERE enabled = 1 AND topic = ? LIMIT 1');
   const insert = database.prepare(`
     INSERT INTO feeds (url, publisher, topic, enabled, poll_interval_seconds, next_poll_at_ms)
     VALUES (?, ?, ?, ?, ?, ?) RETURNING *
@@ -64,6 +66,8 @@ export function createFeedStore(database, { trustedUrls = [defaultFixtureUrl], n
   return {
     get: (id) => select.get(id),
     list: () => list.all(),
+    topics: () => topics.all().map(({ topic }) => topic),
+    hasTopic: (topic) => Boolean(hasTopic.get(topic)),
     isTrusted: (url) => allowedUrls.has(url),
     revision,
     create(values) {
