@@ -76,3 +76,11 @@ Decision: use SMTP and Slack HTTPS for alerts and HTTP for the app. Plan an RSS 
 ```
 
 Decision: admins manage feed URLs and per-feed intervals. The application polls each due URL centrally and saves its schedule, last attempt, last successful poll, and item checkpoint. The [news feed design](P1-task-04-alerts-feature-design.md#news-feed-integration) explains how the worker handles late items and failed polls.
+
+## Phase 1 RSS test fixture
+
+```text
+Also include in the plan to create a "fake" rss  node server for testing purposes, which will generate a news every minute with "News 2026-11-23T09:02:00.000Z" formatted content.
+``
+
+Decision: build the [fake RSS server](P1-task-04-alerts-feature-design.md#fake-rss-server-for-tests) in Phase 2 with one item per UTC minute and a controllable clock.

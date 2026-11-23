@@ -79,6 +79,14 @@ On the first successful poll, record existing items as seen so enabling a feed d
 
 A feed item is a published headline or announcement. Use a publisher-curated top-headlines source if users need editorial urgency. The default is a topic match.
 
+### Fake RSS server for tests
+
+Build a small Node.js server in Phase 2 that exposes a local RSS 2.0 endpoint at `/rss.xml` for development and end-to-end tests. Generate one synthetic item per UTC minute. The title and description use the exact format `News 2026-11-23T09:02:00.000Z`, with the timestamp rounded down to the minute. Use that minute as the item's stable GUID with `isPermaLink="false"` and include a valid RSS publication date.
+
+Return a bounded window of recent items wide enough to cover test polling intervals longer than one minute. Use the system clock for manual testing and a controllable clock for automated tests. Route the real RSS adapter to the fixture through test configuration so production feed validation still applies to admin-provided URLs.
+
+In the end-to-end test, poll once to establish the baseline, advance the clock by one minute, then check that matching subscriptions receive the exact new headline. Poll the same minute again to verify that the adapter does not create duplicate deliveries.
+
 ## Email and Slack delivery
 
 | Use | Choice and alternatives |
@@ -109,13 +117,14 @@ The USGS response gives both occurrence and update times, so revisions can updat
 4. Pending jobs survive restart. Transient failures retry within the configured limit and permanent failures are visible. Administrators can inspect source health, event records, and delivery attempts. Credentials stay server-side.
 5. A second source integrates through the same ingestion contract. A test delivery adapter plugs into the worker using the same matching logic. Unit and end-to-end tests cover supported workflows and failure cases using deterministic inputs.
 6. An admin can add and disable feeds and change each feed's interval. A duplicate URL and configuration changes from regular users are rejected. Multiple subscriptions produce one fetch per scheduled poll of that URL. Restart retains the schedule and checkpoint. A failed poll leaves the last successful poll time intact, and the next successful poll can import previously unseen items.
+7. The fake RSS endpoint produces one item per UTC minute with the expected headline and a stable GUID. An end-to-end test advances the fixture and scheduler clocks, verifies delivery of the new headline, and verifies that a repeated fetch produces no duplicate.
 
 ## Deliverables and order
 
 | Phase | Deliverables and rationale | 24-hour planning budget |
 | --- | --- | --- |
 | P1 Define and plan | Scope, architecture, options, acceptance criteria, feasibility evidence, and prompt history. Set the target before investing in integrations. | 3 hours |
-| P2 Prepare | Task breakdown, API and data specifications, proof of concept from ingestion through delivery, relevant skills, and verification plan. Validate persistence and provider boundaries first. | 4 hours |
+| P2 Prepare | Task breakdown, API and data specifications, proof of concept from ingestion through delivery with a fake Node.js RSS server, relevant skills, and verification plan. Validate persistence and provider boundaries first. | 4 hours |
 | P3 Implement | Runnable app, first sources, both notification channels, and user and admin views. Work through one complete workflow first, then add unit and end-to-end coverage and run AI code review. | 11 hours |
 | P4 Verify and review | Full test suites, fixes with regression tests, review evidence, and screenshots of changed UI elements. Record findings and any human review changes. | 4 hours |
 | P5 Deliver | Setup and operation instructions, known limits, follow-up work, and the repository and milestone history required for submission. | 2 hours |
