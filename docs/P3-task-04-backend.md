@@ -35,3 +35,7 @@ The matcher returns distinct account emails for active subscriptions whose topic
 ## Delivery queue
 
 The queue deduplicates by feed, source URL, item ID, channel, and destination. Each job carries the message and its current outcome. Claiming due work records the attempt, and updates from an older attempt cannot overwrite a newer one. On startup the worker can recover interrupted attempts as pending. A send accepted just before an interruption can be retried.
+
+## Replay and checkpoints
+
+The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.

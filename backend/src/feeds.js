@@ -64,6 +64,7 @@ export function createFeedStore(database, { trustedUrls = [defaultFixtureUrl], n
   return {
     get: (id) => select.get(id),
     list: () => list.all(),
+    isTrusted: (url) => allowedUrls.has(url),
     revision,
     create(values) {
       const { url, publisher, topic, enabled, interval } = settings(values);
