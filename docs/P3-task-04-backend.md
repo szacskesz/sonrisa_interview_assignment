@@ -39,3 +39,5 @@ The queue deduplicates by feed, source URL, item ID, channel, and destination. E
 ## Replay and checkpoints
 
 The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.
+
+The API process checks for due feeds once per second and runs one shared polling cycle per due feed. It saves attempt and success times and the latest error. Failed cycles retry after five seconds, doubling the delay up to five minutes. Disabling a feed or changing its URL invalidates in-flight results. Set `TRUSTED_RSS_URLS` to a comma-separated list when running with fixture URLs other than the default. Run one API process per demo database.

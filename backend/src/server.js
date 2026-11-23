@@ -3,6 +3,8 @@ import { configuredDatabasePath } from './database.js';
 
 const app = createApp({
   databasePath: configuredDatabasePath(),
+  startBackground: true,
+  trustedUrls: process.env.TRUSTED_RSS_URLS?.split(',').map((url) => url.trim()),
   logger: true,
   disableRequestLogging: true,
 });

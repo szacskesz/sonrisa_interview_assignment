@@ -7,14 +7,14 @@ export function createFeedPoller({ database, feeds, matcher, queue, sourceFor, n
   `);
   const advance = database.prepare('UPDATE feeds SET last_processed_published_at_ms = ? WHERE id = ?');
 
-  return async function poll(feedId) {
+  return async function poll(feedId, signal) {
     const original = feeds.get(feedId);
     if (!original?.enabled) return false;
     if (!feeds.isTrusted(original.url)) throw new Error('RSS URL is no longer a trusted demo fixture');
     const revision = feeds.revision(feedId);
     function currentFeed() {
       const feed = feeds.get(feedId);
-      return feed?.enabled && feed.url === original.url && feeds.revision(feedId) === revision ? feed : null;
+      return !signal?.aborted && feed?.enabled && feed.url === original.url && feeds.revision(feedId) === revision ? feed : null;
     }
 
     const source = sourceFor(original);
