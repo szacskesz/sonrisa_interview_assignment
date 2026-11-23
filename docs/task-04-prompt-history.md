@@ -100,3 +100,14 @@ During review i saw this: "On the first successful poll, record existing items a
 ```
 
 Decision: store one publication timestamp per feed and no per-item seen history. Process new entries in memory and persist only the minimal email job data for matching items.
+
+## Phase 1 Readiness review
+
+```text
+Looks good to me, before continuing to the 2nd phase do you seen anything worth describing, studying, examining more? Please review the plan and ask if anything comes into mind.
+```
+
+- Catch-up after downtime needs a confirmed rule. The proposed default is one email per eligible headline in the last five minutes for the one-minute demo, with longer polling intervals accounted for separately. Sending only the latest headline reduces email volume but skips other recent matches.
+- New and resumed subscriptions need a clear time boundary. The proposed default is to alert only on headlines published after the latest activation, even if an older headline appears in the next poll.
+- Docker and Compose are installed, but the Docker engine could not be reached from this session. Mailpit was absent from PATH. Verify a repeatable Mailpit startup path during the Phase 2 proof of concept.
+- The proof of concept should demonstrate that a failed queue write leaves the feed checkpoint intact, and that an email queued before restart appears in Mailpit after the worker resumes.
