@@ -241,3 +241,7 @@ The user asked to rerun the end-to-end suite and capture every screen under `doc
 ## USGS earthquake source
 
 The user approved worldwide magnitude 4.5+ earthquake alerts and the proposed admin source picker. The design reuses the existing last-successful-poll timestamp for catch-up. The user asked to commit the [USGS design](USGS-earthquake-alerts.md) before implementation.
+
+## Slack delivery planning
+
+The user confirmed the USGS workflow after manual testing and requested user-selectable Email and Slack delivery. The [Slack alert delivery plan](slack-alerts-plan.md) proposes per-subscription checkboxes, verified Slack account linking, and direct messages from a bot in one configured workspace. Implementation follows review of the plan.
