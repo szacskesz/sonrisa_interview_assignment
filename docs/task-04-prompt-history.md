@@ -237,3 +237,7 @@ The user requested support for arbitrary RSS URLs and an end-to-end test using t
 ## Screenshot evidence
 
 The user asked to rerun the end-to-end suite and capture every screen under `docs/evidences`. All 10 scenarios passed, including the live Google News check. The [evidence gallery](evidences/README.md) records the pages, dialogs, key review states, and the delivered demo email.
+
+## USGS earthquake source
+
+The user approved worldwide magnitude 4.5+ earthquake alerts and the proposed admin source picker. The design reuses the existing last-successful-poll timestamp for catch-up. The user asked to commit the [USGS design](USGS-earthquake-alerts.md) before implementation.
