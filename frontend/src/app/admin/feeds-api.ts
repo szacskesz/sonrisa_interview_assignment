@@ -1,0 +1,40 @@
+import { HttpClient } from '@angular/common/http';
+import { Service, inject } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+export interface FeedSettings {
+  url: string;
+  publisher: string;
+  topic: string;
+  enabled: boolean;
+  pollIntervalSeconds: number;
+}
+
+export interface FeedRecord extends FeedSettings {
+  id: number;
+  nextPollAt: number;
+  lastPollAttemptAt: number | null;
+  lastPollSuccessAt: number | null;
+  lastPollError: string | null;
+}
+
+const path = '/api/admin/feeds';
+
+/** Read poll health and manage admin-configured RSS feeds. */
+@Service()
+export class FeedsApi {
+  private readonly http = inject(HttpClient);
+
+  async list(): Promise<FeedRecord[]> {
+    const { feeds } = await firstValueFrom(this.http.get<{ feeds: FeedRecord[] }>(path));
+    return feeds;
+  }
+
+  create(settings: FeedSettings): Promise<FeedRecord> {
+    return firstValueFrom(this.http.post<FeedRecord>(path, settings));
+  }
+
+  update(id: number, changes: Partial<FeedSettings>): Promise<FeedRecord> {
+    return firstValueFrom(this.http.patch<FeedRecord>(`${path}/${id}`, changes));
+  }
+}
