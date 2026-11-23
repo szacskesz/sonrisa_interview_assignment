@@ -31,7 +31,7 @@ flowchart LR
     API <--> Database
 ```
 
-Use one Node.js application with an HTTP API, source scheduler, and delivery worker loop. Run the fake RSS server and the standalone Mailpit executable locally. Angular uses standalone components, Angular Router, HttpClient, and Signal Forms for new forms. Give users a subscription page and admins a feed and delivery dashboard. The API enforces ownership and admin authorization. [Mailpit installation](https://mailpit.axllent.org/docs/install/), [Angular Signal Forms](https://angular.dev/guide/forms/signals/comparison)
+Use one Node.js application with an HTTP API, source scheduler, and delivery worker loop. Run the fake RSS server locally and Mailpit in Docker. The standalone Mailpit executable is an alternative. Angular uses standalone components, Angular Router, HttpClient, and Signal Forms for new forms. Give users a subscription page and admins a feed and delivery dashboard. The API enforces ownership and admin authorization. [Mailpit Docker setup](https://mailpit.axllent.org/docs/install/docker/), [Angular Signal Forms](https://angular.dev/guide/forms/signals/comparison)
 
 | Module | Responsibility |
 | --- | --- |
@@ -97,7 +97,7 @@ In the end-to-end test, poll once to establish the baseline, advance the clock b
 
 | Use | Choice and alternatives |
 | --- | --- |
-| Demo email | Use **Nodemailer over SMTP**. Run **Mailpit** as a standalone executable to receive messages for the reviewer and provide an API for automated checks. A separately configured SMTP relay can handle external mail later. [Nodemailer](https://nodemailer.com/smtp), [Mailpit installation](https://mailpit.axllent.org/docs/install/) |
+| Demo email | Use **Nodemailer over SMTP**. Run **Mailpit** locally through Docker to receive messages for the reviewer and provide an API for automated checks. A separately configured SMTP relay can handle external mail later. [Nodemailer](https://nodemailer.com/smtp), [Mailpit Docker setup](https://mailpit.axllent.org/docs/install/docker/) |
 | Later Slack adapter | Evaluate **Incoming Webhooks** over HTTPS with server-side destination aliases. Each webhook posts to its configured channel. Use **chat.postMessage** if authorized channel selection or direct messages become requirements. [Slack Incoming Webhooks](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/), [Slack message posting](https://docs.slack.dev/reference/methods/chat.postMessage/) |
 
 The delivery worker runs independently of the browser. The user and admin views read saved status through HTTP. No current component requires WebSockets.

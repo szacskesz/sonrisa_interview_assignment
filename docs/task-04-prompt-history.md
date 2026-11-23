@@ -128,3 +128,11 @@ why would u use docker? i dont remember mentioning it. please explain
 ```
 
 Decision: recover every eligible item since the saved checkpoint after downtime. New and resumed subscriptions receive only events published after their latest activation. The fake feed can reconstruct missed minutes in pages without an article archive. Docker was checked as an optional way to run Mailpit. The demo uses the standalone Mailpit executable.
+
+## Phase 2 Start
+
+```text
+Okey i started the docker engine, we can use it for that purpose. Ready for phase 2?
+``
+
+Decision: start Phase 2 and use Docker for the Mailpit demo inbox. Keep the Node.js services on the host. See the [implementation plan](P2-task-04-demo-implementation-plan.md).
