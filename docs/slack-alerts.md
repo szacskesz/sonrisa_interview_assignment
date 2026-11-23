@@ -4,15 +4,15 @@ World Alerts supports one installed Slack bot and one linked Slack member per us
 
 ## Configure account linking
 
-The workspace installation lets the bot send direct messages. When a user clicks **Connect Slack**, Slack asks for consent and then sends the user's browser back to World Alerts. The browser return address is the HTTPS redirect URL. World Alerts uses the authorization response to verify which Slack account the user owns. [Sign in with Slack](https://docs.slack.dev/authentication/sign-in-with-slack/)
+The workspace installation lets the bot send direct messages. When a user clicks **Connect Slack**, Slack asks for consent and then sends the user's browser back to the registered redirect URL. World Alerts uses the authorization response to verify which Slack account the user owns. [Sign in with Slack](https://docs.slack.dev/authentication/sign-in-with-slack/)
 
-1. Use a World Alerts HTTPS deployment or an HTTPS development address. Use that address when opening the application. Serve the Angular build there, forward `/api/*` to the Node API, and serve the Angular index for browser routes such as `/subscriptions`. The Node listener can stay on loopback behind the HTTPS proxy.
+1. Follow the localhost instructions below for local HTTP testing. For a deployment, serve the Angular build over HTTPS, forward `/api/*` to the Node API, and serve the Angular index for browser routes such as `/subscriptions`. The Node listener can stay on loopback behind the HTTPS proxy.
 2. In the [Slack app dashboard](https://api.slack.com/apps), open the installed app and go to **OAuth & Permissions → Redirect URLs**. Add `https://your-alerts-host.example/api/slack/callback` with your actual hostname, then save. [Slack redirect URL requirements](https://docs.slack.dev/authentication/installing-with-oauth/#asking-for-permissions)
 3. Start the backend with the following server-side environment variables. Keep the bot token and client secret in your local environment or deployment secret store.
 
 | Variable | Value |
 | --- | --- |
-| `WEB_ORIGIN` | World Alerts HTTPS origin, such as `https://your-alerts-host.example`, without a trailing slash |
+| `WEB_ORIGIN` | World Alerts origin without a trailing slash. Use HTTPS for deployed hosts or `http://localhost:4200` for local testing. |
 | `SLACK_REDIRECT_URL` | The exact URL saved in Slack, with `/api/slack/callback` appended to the origin |
 | `SLACK_WORKSPACE_ID` | The workspace ID beginning with `T` |
 | `SLACK_BOT_TOKEN` | Bot User OAuth Token from **OAuth & Permissions**, beginning with `xoxb-` |
@@ -21,9 +21,21 @@ The workspace installation lets the bot send direct messages. When a user clicks
 
 The bot requires `im:write` and `chat:write` bot scopes. When a user connects, the separate OpenID request uses `openid profile` to retrieve the signed workspace and member identity. SQLite stores the verified IDs and connection time. The user access token returned by Slack is discarded. The existing World Alerts sign-in is required for linking and stays in use afterwards. [OpenID discovery](https://slack.com/.well-known/openid-configuration) · [Slack bot authentication](https://docs.slack.dev/reference/methods/auth.test/)
 
+## Try the callback on localhost
+
+Save `http://localhost:4200/api/slack/callback` under **OAuth & Permissions → Redirect URLs**. With the Slack credentials and `JWT_SECRET` set, start the backend from the repository root in PowerShell.
+
+```powershell
+$env:WEB_ORIGIN = 'http://localhost:4200'
+$env:SLACK_REDIRECT_URL = 'http://localhost:4200/api/slack/callback'
+pnpm --dir backend start
+```
+
+In a second terminal, run `pnpm --dir frontend exec ng serve --host localhost --port 4200`. Open `http://localhost:4200` in Edge or Chrome, sign in, and click **Connect Slack**. Use the same hostname in the browser throughout the test. The application allows plain HTTP only for the exact `localhost` hostname and keeps the handshake cookie's `Secure` attribute. The local browser flow has been tested with a simulated Slack provider. Slack's live authorization and token exchange for the HTTP redirect still need verification. [Browser cookie behavior on localhost](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#secure)
+
 ## Verify your workspace
 
-1. Use an account belonging to the configured workspace that has agreed to receive the test. Sign in to World Alerts through its HTTPS address and choose **Subscriptions → Connect Slack**.
+1. Use an account belonging to the configured workspace that has agreed to receive the test. Sign in to World Alerts at the configured origin and choose **Subscriptions → Connect Slack**.
 2. Complete Slack consent and confirm that World Alerts shows the connected workspace and member.
 3. With the fake RSS source running, subscribe to its topic and select **Slack direct message**. To check both channels, leave **Email** selected and keep Mailpit available.
 4. After a fresh test headline is published, open the bot's conversation in [Slack in your browser](https://app.slack.com/client). Confirm there is one new message for the headline. In World Alerts **Deliveries**, confirm the **Slack DM** status and the separate **Email** status if selected.
