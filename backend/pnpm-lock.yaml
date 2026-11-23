@@ -17,6 +17,9 @@ importers:
       feedsmith:
         specifier: 3.0.1
         version: 3.0.1
+      nodemailer:
+        specifier: 10.6.1
+        version: 10.6.1
 
 packages:
 
@@ -137,6 +140,10 @@ packages:
 
   light-my-request@6.8.1:
     resolution: {integrity: sha512-20biUK0HAIPG9BZOK3/4s8uVAkAoi1+qW55lciHZCR0puTWipBgyMPEUjqXDWLjsZeqfO6DGsuwW5eyfsTGtyg==}
+
+  nodemailer@10.6.1:
+    resolution: {integrity: sha512-d7kfFfS/tR4Aca+SBvRaQ+MXKNv7d2JiRe5TxaRcFT/kYMh4GGPnW9aKksTIEvyEbA7d/7HYWE4YPDEHxzJj/g==}
+    engines: {node: '>=20.0.0'}
 
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
@@ -364,6 +371,8 @@ snapshots:
       cookie: 2.0.2
       process-warning: 5.1.1
       set-cookie-parser: 3.2.3
+
+  nodemailer@10.6.1: {}
 
   on-exit-leak-free@2.1.2: {}
 

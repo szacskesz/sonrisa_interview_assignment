@@ -36,6 +36,8 @@ The matcher returns distinct account emails for active subscriptions whose topic
 
 The queue deduplicates by feed, source URL, item ID, channel, and destination. Each job carries the message and its current outcome. Claiming due work records the attempt, and updates from an older attempt cannot overwrite a newer one. On startup the worker can recover interrupted attempts as pending. A send accepted just before an interruption can be retried.
 
+The email channel sends a plain-text alert with the headline as subject and the headline, topic, source, and optional item URL in the body. It reports success, retryable failure, or permanent failure without storing SMTP response text. With Mailpit running, set `TEST_MAILPIT_URL=http://127.0.0.1:18025` and run the backend tests to include the real SMTP and inbox check.
+
 ## Replay and checkpoints
 
 The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.
