@@ -103,3 +103,16 @@ test('retries a failed catalog range using the previous successful scan without 
   assert.equal(app.services.feeds.get(feed.id).last_poll_error, null);
   assert.equal(app.services.queue.recent().length, 2);
 });
+
+test('records the frozen scan boundary when an empty request finishes later', async (t) => {
+  let now = anchor;
+  const { app, request } = await createApiFixture(t, { now: () => now, usgsFetch: async () => {
+    now += 7_000;
+    return response();
+  } });
+  const feed = (await request(1, 'POST', path, { sourceKind: 'usgs' })).json();
+  await app.services.pollFeeds();
+  assert.equal(now, anchor + 7_000);
+  assert.equal(app.services.feeds.get(feed.id).last_poll_success_at_ms, anchor);
+  assert.equal(app.services.feeds.get(feed.id).next_poll_at_ms, anchor + minute);
+});

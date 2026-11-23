@@ -60,8 +60,8 @@ export function createUsgsSource({ fetchFeed = fetch } = {}) {
         yield normalizeEvents(await read(usgsSource.url, signal));
         return;
       }
-      for (let start = after; start <= through; start += day) {
-        const end = Math.min(start + day - 1, through);
+      for (let start = after; start < through; start += day) {
+        const end = Math.min(start + day, through);
         const url = new URL(catalogUrl);
         url.search = new URLSearchParams({
           format: 'geojson', eventtype: 'earthquake', minmagnitude: String(minMagnitude),

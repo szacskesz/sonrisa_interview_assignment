@@ -22,7 +22,8 @@ async function mailpit(path) {
 }
 
 export const test = base.extend({
-  async demo({}, use) {
+  usgsFetch: [undefined, { option: true }],
+  async demo({ usgsFetch }, use) {
     const directory = await mkdtemp(join(tmpdir(), 'alerts-browser-'));
     let time = initialTime;
     let app;
@@ -72,7 +73,8 @@ export const test = base.extend({
       const open = async (startBackground) => {
         app = createApp({
           databasePath: join(directory, 'alerts.sqlite'), jwtSecret,
-          fixtureUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, channels: new Map([['email', channel]]),
+          fixtureUrls: feeds.map(({ url }) => url), webOrigin: url, now, startBackground, usgsFetch,
+          channels: new Map([['email', channel]]),
         });
         await app.ready();
       };

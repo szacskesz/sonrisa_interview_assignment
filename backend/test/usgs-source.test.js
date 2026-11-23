@@ -47,9 +47,20 @@ test('splits catalog catch-up into contiguous bounded windows and paginates raw 
   }
   assert.deepEqual(requests.map((url) => url.searchParams.get('offset')), ['1', '201', '1']);
   assert.equal(Date.parse(requests[0].searchParams.get('starttime')), after);
-  assert.equal(Date.parse(requests[1].searchParams.get('endtime')), after + day - 1);
+  assert.equal(Date.parse(requests[1].searchParams.get('endtime')), after + day);
   assert.equal(Date.parse(requests[2].searchParams.get('starttime')), after + day);
   assert.equal(Date.parse(requests[2].searchParams.get('endtime')), start);
+});
+
+test('does not request a zero-width window when a catalog range ends exactly at a day boundary', async () => {
+  const requests = [];
+  const source = createUsgsSource({ fetchFeed: async (url) => {
+    requests.push(new URL(url));
+    return new Response(null, { status: 204 });
+  } });
+  await pages(source, start - day);
+  assert.equal(requests.length, 1);
+  assert.equal(Date.parse(requests[0].searchParams.get('endtime')), start);
 });
 
 test('reports HTTP errors and rejects malformed USGS data', async () => {
