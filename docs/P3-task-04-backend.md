@@ -30,6 +30,8 @@ The RSS adapter exposes `latest()` for the publication timestamp or an empty sna
 
 The feed store accepts only configured fixture URLs and enforces a unique normalized URL. An enabled feed defaults to a 300-second interval and is initially due immediately. Changing the interval reschedules the next poll and keeps the article checkpoint. Re-enabling or replacing the URL clears the baseline and prior poll health.
 
+`GET /api/admin/feeds` returns `{feeds}`. `POST /api/admin/feeds` takes `url`, `publisher`, `topic`, and optional `enabled` and `pollIntervalSeconds`. It returns the created feed with HTTP 201. `PATCH /api/admin/feeds/:id` accepts changes to these fields and returns the updated feed. Feed responses also include `id`, `nextPollAt`, `lastPollAttemptAt`, `lastPollSuccessAt`, and `lastPollError`. Timestamps use UTC Unix milliseconds. Duplicate URLs return HTTP 409 and other invalid settings return HTTP 400.
+
 ## Subscriptions
 
 The subscription store scopes reads and writes to the owner's account ID. Creation starts active. Resuming or changing the topic records a new activation time. Pausing preserves the previous activation time, and removing a subscription deletes the record.

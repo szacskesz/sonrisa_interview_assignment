@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import Fastify from 'fastify';
+import { configureAdminFeedsApi } from './admin-feeds-api.js';
 import { configureApiErrors } from './api-errors.js';
 import { migrateDatabase, openDatabase } from './database.js';
 import { createDeliveryQueue } from './delivery-jobs.js';
@@ -27,6 +28,7 @@ export function createApp({
   configureSessionApi(app, { secret: jwtSecret, webOrigin });
   configureTopicsApi(app);
   configureSubscriptionsApi(app);
+  configureAdminFeedsApi(app);
   const database = openDatabase(databasePath);
   app.decorate('database', database);
   app.decorate('services', null);
