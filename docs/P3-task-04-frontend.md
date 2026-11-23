@@ -19,4 +19,6 @@ The admin feeds client lists configuration and poll health, creates trusted feed
 
 The admin deliveries client reads recent jobs with typed status and attempt summaries. It propagates access and network failures for the page to display.
 
+The sign-in page uses Signal Forms. The shell shows navigation for the current account role, and route guards look up the current account before opening a protected page. A protected API response with HTTP 401 returns the user to sign-in and explains the expired session.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)

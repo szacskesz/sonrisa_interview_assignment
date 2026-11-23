@@ -15,6 +15,10 @@ export class Session {
   private readonly state = signal<Account | null>(null);
   readonly account = this.state.asReadonly();
 
+  clear(): void {
+    this.state.set(null);
+  }
+
   async current(): Promise<Account | null> {
     try {
       const account = await firstValueFrom(this.http.get<Account>('/api/session'));

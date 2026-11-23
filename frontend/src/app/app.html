@@ -1,1 +1,22 @@
-<router-outlet />
+<div class="app-frame">
+  <header class="app-header">
+    <span class="brand"><span class="brand-mark" aria-hidden="true"></span>World Alerts</span>
+    @if (account(); as current) {
+      <nav class="app-nav" aria-label="Application">
+        @if (current.role === 'admin') {
+          <a routerLink="/admin/feeds" routerLinkActive="current" ariaCurrentWhenActive="page">Feeds</a>
+          <a routerLink="/admin/deliveries" routerLinkActive="current" ariaCurrentWhenActive="page">Deliveries</a>
+        } @else {
+          <a routerLink="/subscriptions" routerLinkActive="current" ariaCurrentWhenActive="page">Subscriptions</a>
+        }
+        <button type="button" [disabled]="signingOut()" (click)="signOut()">Sign out</button>
+      </nav>
+    }
+  </header>
+  <main class="app-content">
+    @if (failure(); as message) {
+      <p class="inline-error" role="alert">{{ message }}</p>
+    }
+    <router-outlet />
+  </main>
+</div>

@@ -1,0 +1,17 @@
+<section class="sign-in" aria-labelledby="sign-in-title">
+  <h1 id="sign-in-title">Sign in</h1>
+  <p class="secondary">Use your provisioned account.</p>
+  <form novalidate (submit)="signIn($event)">
+    <label>Email <input type="email" autocomplete="username" [formField]="credentials.email" /></label>
+    <label>Password <input type="password" autocomplete="current-password" [formField]="credentials.password" /></label>
+    @if (failure() || notice(); as message) {
+      <p class="inline-error" role="alert">{{ message }}</p>
+    }
+    @if (credentials().touched() && credentials().invalid()) {
+      <p class="inline-error" role="alert">Enter a valid email and password.</p>
+    }
+    <button class="primary" [disabled]="credentials().submitting()">
+      {{ credentials().submitting() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+</section>
