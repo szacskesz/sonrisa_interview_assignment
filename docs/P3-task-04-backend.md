@@ -17,3 +17,7 @@ Startup applies the SQL migrations under `backend/src/migrations/` in order. SQL
 ## Demo accounts
 
 Set `DEMO_ADMIN_PASSWORD` and `DEMO_USER_PASSWORD` to local demo secrets of 12 to 128 characters, then run `pnpm --dir backend seed`. The default emails are `admin@example.test` and `user@example.test`. Override them with `DEMO_ADMIN_EMAIL` and `DEMO_USER_EMAIL`. The seed applies migrations and creates both accounts with salted scrypt hashes. Rerunning it preserves existing accounts and passwords. Use the same `ALERTS_DB_PATH` for seeding and the server.
+
+## Fake RSS
+
+Run `pnpm --dir backend fake-rss` in a separate terminal. By default it serves `http://127.0.0.1:18080/rss.xml`. Set `FAKE_RSS_PORT` to change the port. The base URL returns the latest UTC minute headline, such as `News 2026-11-23T09:02:00.000Z`. Supplying both `after` and `through` as UTC minute timestamps returns up to 100 items in publication order. The lower bound is exclusive and the upper bound is inclusive.

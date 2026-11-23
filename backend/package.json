@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node src/server.js",
     "seed": "node src/seed.js",
+    "fake-rss": "node fixtures/fake-rss.js",
     "test": "node --test"
   },
   "dependencies": {
