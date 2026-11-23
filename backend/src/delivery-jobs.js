@@ -34,6 +34,9 @@ export function createDeliveryQueue(database) {
     UPDATE delivery_jobs SET status = 'canceled', next_attempt_at_ms = NULL
     WHERE id = ? AND status = 'pending'
   `);
+  const defer = database.prepare(`
+    UPDATE delivery_jobs SET next_attempt_at_ms = ? WHERE id = ? AND status = 'pending'
+  `);
   const recover = database.prepare(`
     UPDATE delivery_jobs SET status = CASE WHEN attempt_count >= ? THEN 'failed' ELSE 'pending' END,
       next_attempt_at_ms = CASE WHEN attempt_count >= ? THEN NULL ELSE ? END,
@@ -50,6 +53,7 @@ export function createDeliveryQueue(database) {
     nextDue: (now) => nextDue.get(now),
     claim: (id, now) => claim.get(id, now),
     cancel: (id) => cancel.run(id).changes > 0,
+    defer: (id, nextAttemptAt) => defer.run(nextAttemptAt, id).changes > 0,
     finish(job, { status, nextAttemptAt = null, sentAt = null, lastError = null }) {
       return finish.run(status, nextAttemptAt, sentAt, lastError, job.id, job.attempt_count).changes > 0;
     },

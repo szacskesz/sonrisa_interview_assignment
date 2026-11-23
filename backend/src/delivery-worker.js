@@ -11,6 +11,11 @@ export function createDeliveryWorker({ queue, channels, isEligible, now = Date.n
         queue.cancel(pending.id);
         continue;
       }
+      const availableAt = channel?.availableAt?.();
+      if (availableAt > now()) {
+        queue.defer(pending.id, availableAt);
+        continue;
+      }
       const job = queue.claim(pending.id, now());
       if (!job) continue;
       let result;
@@ -19,15 +24,18 @@ export function createDeliveryWorker({ queue, channels, isEligible, now = Date.n
           title: job.title, topic: job.topic, publisher: job.publisher,
           url: job.item_url, publishedAt: job.published_at_ms,
           ...(job.source_kind === 'usgs' ? { occurredAt: job.published_at_ms } : {}),
-        }) : { status: 'permanent', error: 'Delivery channel is unavailable' };
+        }, () => isEligible(job)) : { status: 'permanent', error: 'Delivery channel is unavailable' };
       } catch {
         result = { status: 'retryable', error: 'Delivery channel failed' };
       }
       if (result.status === 'sent') {
         queue.finish(job, { status: 'sent', sentAt: now() });
+      } else if (result.status === 'canceled') {
+        queue.finish(job, { status: 'canceled' });
       } else if (result.status === 'retryable' && job.attempt_count < maxAttempts) {
         const backoff = Math.min(300_000, 5_000 * 2 ** (job.attempt_count - 1));
-        queue.finish(job, { status: 'pending', nextAttemptAt: now() + backoff, lastError: result.error });
+        queue.finish(job, { status: 'pending', nextAttemptAt: Math.max(now() + backoff, result.retryAt ?? 0),
+          lastError: result.error });
       } else {
         queue.finish(job, { status: 'failed', lastError: result.error });
       }

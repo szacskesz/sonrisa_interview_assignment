@@ -1,9 +1,16 @@
 import { createApp } from './app.js';
 import { configuredDatabasePath } from './database.js';
 import { createEmailChannel } from './email-channel.js';
+import { createSlackChannel } from './slack-channel.js';
 import { createSlackIdentity, slackConfiguration } from './slack-identity.js';
 
 const slack = slackConfiguration(process.env, process.env.WEB_ORIGIN);
+const channels = new Map([['email', createEmailChannel({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT ?? 11025),
+  from: process.env.SMTP_FROM,
+})]]);
+if (slack) channels.set('slack', createSlackChannel(slack));
 
 const app = createApp({
   databasePath: configuredDatabasePath(),
@@ -12,11 +19,7 @@ const app = createApp({
   webOrigin: process.env.WEB_ORIGIN,
   slackIdentity: slack && createSlackIdentity(slack),
   fixtureUrls: (process.env.FIXTURE_RSS_URLS ?? process.env.TRUSTED_RSS_URLS)?.split(',').map((url) => url.trim()),
-  channels: new Map([['email', createEmailChannel({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 11025),
-    from: process.env.SMTP_FROM,
-  })]]),
+  channels,
   logger: true,
   disableRequestLogging: true,
 });

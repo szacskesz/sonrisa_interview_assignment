@@ -83,3 +83,30 @@ test('finishes permanent and exhausted interrupted attempts without retrying', a
   assert.deepEqual(demo.jobs().map(({ status, attempt_count, last_error }) => [status, attempt_count, last_error]),
     [['failed', 1, 'Rejected'], ['failed', 1, 'Previous delivery attempt was interrupted']]);
 });
+
+test('defers throttled Slack jobs without consuming attempts or delaying email', async () => {
+  using database = openDatabase(':memory:');
+  const demo = setup(database, {}, 3);
+  let slackCalls = 0;
+  let deadline = 0;
+  const channels = new Map([
+    ['slack', { availableAt: () => deadline, async send() {
+      slackCalls += 1;
+      if (slackCalls > 1) return { status: 'sent' };
+      deadline = 70_000;
+      return { status: 'retryable', error: 'Slack rate limit', retryAt: deadline };
+    } }],
+    ['email', { send: async () => ({ status: 'sent' }) }],
+  ]);
+  const worker = createDeliveryWorker({ queue: demo.queue, channels, isEligible: () => true, now: () => 10 });
+  demo.enqueue('first');
+  demo.enqueue('second');
+  demo.enqueue('email');
+  database.exec("UPDATE delivery_jobs SET channel = 'slack' WHERE source_item_id <> 'email'");
+  await worker.tick();
+  assert.equal(slackCalls, 1);
+  assert.deepEqual(demo.jobs().map(({ status, attempt_count, next_attempt_at_ms }) =>
+    [status, attempt_count, next_attempt_at_ms]), [
+    ['pending', 1, 70_000], ['pending', 0, 70_000], ['sent', 1, null],
+  ]);
+});
