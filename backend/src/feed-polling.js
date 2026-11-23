@@ -1,5 +1,7 @@
 import { transaction } from './database.js';
 
+const usgsOverlapMs = 5 * 60_000;
+
 /** Import a current RSS snapshot or replay a paged fixture without keeping an article archive. */
 export function createFeedPoller({ database, feeds, matcher, queue, sourceFor, now = Date.now }) {
   const baseline = database.prepare(`
@@ -15,12 +17,12 @@ export function createFeedPoller({ database, feeds, matcher, queue, sourceFor, n
       queue.enqueue({
         feedId: feed.id, sourceUrl: feed.url, itemId: item.id, channel: 'email',
         destination, title: item.title, topic: feed.topic, publisher: feed.publisher,
-        itemUrl: item.url, publishedAt,
+        itemUrl: item.url, publishedAt, aliases: item.aliases,
       }, now());
     }
   }
 
-  return async function poll(feedId, signal) {
+  return async function poll(feedId, signal, startedAt = now()) {
     const original = feeds.get(feedId);
     if (!original?.enabled) return false;
     const revision = feeds.revision(feedId);
@@ -30,6 +32,26 @@ export function createFeedPoller({ database, feeds, matcher, queue, sourceFor, n
     }
 
     const source = sourceFor(original);
+    if (source.scan) {
+      const first = original.last_poll_success_at_ms === null;
+      const after = first ? null : Math.max(original.initialized_at_ms, original.last_poll_success_at_ms - usgsOverlapMs);
+      for await (const items of source.scan({ after, through: startedAt, signal })) {
+        const current = currentFeed();
+        if (!current) return false;
+        if (first) {
+          baseline.run(startedAt, null, feedId);
+          return true;
+        }
+        transaction(database, () => {
+          for (const item of items) {
+            if (item.publishedAt > original.initialized_at_ms && item.publishedAt <= startedAt) {
+              enqueue(current, item, item.publishedAt);
+            }
+          }
+        });
+      }
+      return Boolean(currentFeed());
+    }
     if (source.snapshot) {
       const items = await source.snapshot();
       const current = currentFeed();

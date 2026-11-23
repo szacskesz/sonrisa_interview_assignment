@@ -9,13 +9,16 @@ const fields = {
   pollIntervalSeconds: { type: 'integer', minimum: 1 },
 };
 const createBody = {
-  type: 'object', required: ['url', 'publisher', 'topic'], additionalProperties: false, properties: fields,
+  type: 'object', additionalProperties: false,
+  properties: { ...fields, sourceKind: { enum: ['rss', 'usgs'] } },
+  if: { required: ['sourceKind'], properties: { sourceKind: { const: 'usgs' } } },
+  else: { required: ['url', 'publisher', 'topic'] },
 };
 const editBody = { type: 'object', minProperties: 1, additionalProperties: false, properties: fields };
 
 function feedPayload(row) {
   return {
-    id: row.id, url: row.url, publisher: row.publisher, topic: row.topic, enabled: Boolean(row.enabled),
+    id: row.id, sourceKind: row.source_kind, url: row.url, publisher: row.publisher, topic: row.topic, enabled: Boolean(row.enabled),
     pollIntervalSeconds: row.poll_interval_seconds, nextPollAt: row.next_poll_at_ms,
     lastPollAttemptAt: row.last_poll_attempt_at_ms, lastPollSuccessAt: row.last_poll_success_at_ms,
     lastPollError: row.last_poll_error,
@@ -27,7 +30,8 @@ function withFeedValidation(update) {
     return update();
   } catch (error) {
     if (!(error instanceof FeedSettingsError)) throw error;
-    throw new ApiError(error.code === 'duplicate_feed_url' ? 409 : 400, error.code, error.message);
+    const conflict = ['duplicate_feed_url', 'duplicate_usgs_source'].includes(error.code);
+    throw new ApiError(conflict ? 409 : 400, error.code, error.message);
   }
 }
 

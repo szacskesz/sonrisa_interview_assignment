@@ -18,6 +18,7 @@ export function createDeliveryWorker({ queue, channels, isEligible, now = Date.n
         result = channel ? await channel.send(job.destination, {
           title: job.title, topic: job.topic, publisher: job.publisher,
           url: job.item_url, publishedAt: job.published_at_ms,
+          ...(job.source_kind === 'usgs' ? { occurredAt: job.published_at_ms } : {}),
         }) : { status: 'permanent', error: 'Delivery channel is unavailable' };
       } catch {
         result = { status: 'retryable', error: 'Delivery channel failed' };

@@ -21,7 +21,7 @@ export function createFeedScheduler({ database, feeds, poll, now = Date.now }) {
       markAttempt.run(startedAt, feed.id);
       let failure;
       try {
-        if (!await poll(feed.id, signal)) continue;
+        if (!await poll(feed.id, signal, startedAt)) continue;
       } catch (error) {
         failure = error instanceof Error ? error.message : 'Feed polling failed';
       }
@@ -40,7 +40,8 @@ export function createFeedScheduler({ database, feeds, poll, now = Date.now }) {
       } else {
         failures.delete(feed.id);
         const nextPoll = Math.min(latestRepresentableDate, Math.max(finishedAt, startedAt + current.poll_interval_seconds * 1_000));
-        markSuccess.run(finishedAt, rescheduled ? current.next_poll_at_ms : nextPoll, feed.id);
+        const coveredThrough = current.source_kind === 'usgs' ? startedAt : finishedAt;
+        markSuccess.run(coveredThrough, rescheduled ? current.next_poll_at_ms : nextPoll, feed.id);
       }
     }
   }

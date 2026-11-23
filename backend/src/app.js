@@ -18,15 +18,19 @@ import { configureSessionApi } from './session-api.js';
 import { configureSubscriptionsApi } from './subscriptions-api.js';
 import { createSubscriptionStore } from './subscriptions.js';
 import { configureTopicsApi } from './topics-api.js';
+import { createUsgsSource } from './usgs-source.js';
 
 /** Build the API for an HTTP listener or in-process request tests. */
 export function createApp({
   databasePath = ':memory:', fixtureUrls = [defaultFixtureUrl], now = Date.now, startBackground = false,
   jwtSecret = randomBytes(32).toString('hex'), webOrigin = 'http://127.0.0.1:4200',
-  sourceFor, channels = new Map([['email', createEmailChannel()]]), ...options
+  sourceFor, usgsFetch, channels = new Map([['email', createEmailChannel()]]), ...options
 } = {}) {
   const fixtures = new Set(fixtureUrls.map((url) => normalizeRssUrl(url).href));
-  const selectSource = sourceFor ?? (({ url }) => fixtures.has(url) ? createFixtureRssSource(url) : createRssSource(url));
+  const selectSource = sourceFor ?? (({ source_kind, url }) => {
+    if (source_kind === 'usgs') return createUsgsSource({ fetchFeed: usgsFetch });
+    return fixtures.has(url) ? createFixtureRssSource(url) : createRssSource(url);
+  });
   const app = Fastify({ ajv: { customOptions: { removeAdditional: false, coerceTypes: false, useDefaults: false } }, ...options });
   configureApiErrors(app);
   configureSessionApi(app, { secret: jwtSecret, webOrigin });

@@ -1,4 +1,5 @@
 import { normalizeRssUrl } from './rss-http.js';
+import { usgsSource } from './usgs-source.js';
 
 export const defaultFixtureUrl = 'http://127.0.0.1:18080/rss.xml';
 export const latestRepresentableDate = 8_640_000_000_000_000;
@@ -19,8 +20,8 @@ export function createFeedStore(database, { now = Date.now } = {}) {
   const topics = database.prepare('SELECT DISTINCT topic FROM feeds WHERE enabled = 1 ORDER BY topic COLLATE NOCASE, topic');
   const hasTopic = database.prepare('SELECT 1 FROM feeds WHERE enabled = 1 AND topic = ? LIMIT 1');
   const insert = database.prepare(`
-    INSERT INTO feeds (url, publisher, topic, enabled, poll_interval_seconds, next_poll_at_ms)
-    VALUES (?, ?, ?, ?, ?, ?) RETURNING *
+    INSERT INTO feeds (source_kind, url, publisher, topic, enabled, poll_interval_seconds, next_poll_at_ms)
+    VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *
   `);
   const update = database.prepare(`
     UPDATE feeds SET url = ?, publisher = ?, topic = ?, enabled = ?, poll_interval_seconds = ?,
@@ -30,25 +31,32 @@ export function createFeedStore(database, { now = Date.now } = {}) {
   `);
 
   function settings(values, existing) {
+    const sourceKind = existing?.source_kind ?? values.sourceKind ?? 'rss';
+    const earthquake = sourceKind === 'usgs';
+    if (earthquake && ['url', 'publisher', 'topic'].some((field) => values[field] !== undefined)) {
+      throw new FeedSettingsError('fixed_usgs_settings', 'USGS provides the URL, publisher, and topic');
+    }
     let url;
     try {
-      url = normalizeRssUrl(values.url ?? existing?.url).href;
+      url = earthquake ? usgsSource.url : normalizeRssUrl(values.url ?? existing?.url).href;
     } catch {
       throw new FeedSettingsError('invalid_feed_url', 'Enter a valid RSS URL');
     }
     const duplicate = byUrl.get(url);
     if (duplicate && duplicate.id !== existing?.id) {
+      if (earthquake) throw new FeedSettingsError('duplicate_usgs_source', 'USGS Earthquakes is already configured');
       throw new FeedSettingsError('duplicate_feed_url', 'That RSS URL is already configured');
     }
-    const publisher = (values.publisher ?? existing?.publisher)?.trim();
-    const topic = (values.topic ?? existing?.topic)?.trim();
-    const interval = values.pollIntervalSeconds ?? existing?.poll_interval_seconds ?? 300;
+    const publisher = earthquake ? usgsSource.publisher : (values.publisher ?? existing?.publisher)?.trim();
+    const topic = earthquake ? usgsSource.topic : (values.topic ?? existing?.topic)?.trim();
+    const defaultInterval = earthquake ? usgsSource.pollIntervalSeconds : 300;
+    const interval = values.pollIntervalSeconds ?? existing?.poll_interval_seconds ?? defaultInterval;
     if (!publisher || !topic || !Number.isSafeInteger(interval) || interval < 1 ||
         interval > Math.floor((latestRepresentableDate - now()) / 1000)) {
       throw new FeedSettingsError('invalid_feed_settings', 'Enter a publisher, topic, and positive polling interval');
     }
     return {
-      url, publisher, topic, interval,
+      sourceKind, url, publisher, topic, interval,
       enabled: Number(values.enabled ?? (existing ? Boolean(existing.enabled) : true)),
     };
   }
@@ -61,8 +69,8 @@ export function createFeedStore(database, { now = Date.now } = {}) {
     hasTopic: (topic) => Boolean(hasTopic.get(topic)),
     revision,
     create(values) {
-      const { url, publisher, topic, enabled, interval } = settings(values);
-      return insert.get(url, publisher, topic, enabled, interval, now());
+      const { sourceKind, url, publisher, topic, enabled, interval } = settings(values);
+      return insert.get(sourceKind, url, publisher, topic, enabled, interval, now());
     },
     update(id, values) {
       const existing = select.get(id);

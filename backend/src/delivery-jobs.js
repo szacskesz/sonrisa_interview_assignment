@@ -12,13 +12,19 @@ export function createDeliveryQueue(database) {
     SELECT * FROM delivery_jobs WHERE status = 'pending' AND next_attempt_at_ms <= ?
     ORDER BY next_attempt_at_ms, id LIMIT 1
   `);
+  const knownAlias = database.prepare(`
+    SELECT 1 FROM delivery_jobs
+    WHERE feed_id = ? AND source_url = ? AND channel = ? AND destination = ?
+      AND source_item_id IN (SELECT value FROM json_each(?)) LIMIT 1
+  `);
   const recent = database.prepare(`
     SELECT id, title, publisher, status, attempt_count, last_error
     FROM delivery_jobs ORDER BY id DESC LIMIT 100
   `);
   const claim = database.prepare(`
     UPDATE delivery_jobs SET status = 'sending', attempt_count = attempt_count + 1, next_attempt_at_ms = NULL
-    WHERE id = ? AND status = 'pending' AND next_attempt_at_ms <= ? RETURNING *
+    WHERE id = ? AND status = 'pending' AND next_attempt_at_ms <= ?
+    RETURNING *, (SELECT source_kind FROM feeds WHERE feeds.id = delivery_jobs.feed_id) AS source_kind
   `);
   const finish = database.prepare(`
     UPDATE delivery_jobs SET status = ?, next_attempt_at_ms = ?, sent_at_ms = ?, last_error = ?
@@ -36,7 +42,8 @@ export function createDeliveryQueue(database) {
   `);
   return {
     recent: () => recent.all(),
-    enqueue({ feedId, sourceUrl, itemId, channel, destination, title, topic, publisher, itemUrl, publishedAt }, now) {
+    enqueue({ feedId, sourceUrl, itemId, channel, destination, title, topic, publisher, itemUrl, publishedAt, aliases }, now) {
+      if (aliases?.length && knownAlias.get(feedId, sourceUrl, channel, destination, JSON.stringify(aliases))) return false;
       return insert.run(feedId, sourceUrl, itemId, channel, destination, title, topic, publisher,
         itemUrl ?? null, publishedAt, now, now).changes > 0;
     },

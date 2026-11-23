@@ -21,8 +21,9 @@ export function createEmailChannel({
   }),
 } = {}) {
   return {
-    async send(destination, { title, topic, publisher, url }) {
+    async send(destination, { title, topic, publisher, url, occurredAt }) {
       const text = [title, `Topic: ${topic}`, `Source: ${publisher}`];
+      if (occurredAt !== undefined) text.push(`Occurred (UTC): ${new Date(occurredAt).toISOString()}`);
       if (url) text.push(url);
       try {
         const result = await transport.sendMail({
