@@ -17,4 +17,6 @@ The subscriptions client lists available topics and current-account subscription
 
 The admin feeds client lists configuration and poll health, creates trusted feeds, and sends partial updates for settings and toggles. Duplicate URL failures carry the API's validation code.
 
+The admin deliveries client reads recent jobs with typed status and attempt summaries. It propagates access and network failures for the page to display.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
