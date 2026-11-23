@@ -39,7 +39,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
     const { feeds, poll } = setup(database);
     id = feeds.create(config(fixture.url)).id;
     database.exec(`
-      INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0);
+      INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
       INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0), (2, 1, 'World', 'active', 0, 0);
     `);
     assert.equal(await poll(id), true);
@@ -57,7 +57,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
     const { feeds, poll } = setup(database);
     database.exec(`
       DROP TRIGGER reject_batch;
-      INSERT INTO users VALUES (2, 'late@example.test', 'hash', 'user', 0);
+      INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (2, 'late@example.test', 'hash', 'user', 0);
       INSERT INTO subscriptions VALUES (3, 2, 'World', 'active', 0, ${anchor + 4 * minute});
     `);
     await poll(id);
@@ -83,7 +83,7 @@ test('records a clean empty baseline, then imports articles published afterwards
   }) });
   const { id } = feeds.create(config(defaultFixtureUrl));
   database.exec(`
-    INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0);
+    INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
     INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0);
   `);
   await poll(id);
@@ -106,7 +106,7 @@ test('imports newly visible public RSS items with tied and unordered dates, and 
   const { feeds, poll } = setup(database, options);
   const { id } = feeds.create(config(url));
   database.exec(`
-    INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0);
+    INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
     INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0);
   `);
   await poll(id);

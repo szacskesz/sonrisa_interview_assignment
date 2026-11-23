@@ -11,7 +11,7 @@ const destination = 'reader@example.test';
 
 function setup(database, channel, maxAttempts) {
   migrateDatabase(database);
-  database.exec(`INSERT INTO users VALUES (1, '${destination}', 'hash', 'user', 0)`);
+  database.exec(`INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, '${destination}', 'hash', 'user', 0)`);
   let time = 1;
   const now = () => time;
   const subscriptions = createSubscriptionStore(database, { now });

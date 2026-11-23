@@ -42,7 +42,7 @@ test('rejects invalid claims and signatures, wrong credentials, invalid requests
   const app = createApp({ webOrigin: origin, jwtSecret });
   t.after(() => app.close());
   await app.ready();
-  app.database.exec("INSERT INTO users VALUES (1, 'reader@example.test', 'hash', 'user', 0)");
+  app.database.exec("INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0)");
   const valid = app.jwt.sign({ sub: '1' });
   assert.equal((await app.inject({ url: '/api/session', headers: { cookie: `alerts_session=${valid}` } })).statusCode, 200);
   assert.equal((await app.inject({ url: '/api/session', headers: { authorization: `Bearer ${valid}` } })).statusCode, 401);

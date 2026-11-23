@@ -8,7 +8,7 @@ test('matches a topic across feeds with strict activation and one result per acc
   using database = openDatabase(':memory:');
   migrateDatabase(database);
   database.exec(`
-    INSERT INTO users VALUES
+    INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES
       (1, 'one@example.test', 'hash', 'user', 0),
       (2, 'two@example.test', 'hash', 'user', 0),
       (3, 'three@example.test', 'hash', 'user', 0);

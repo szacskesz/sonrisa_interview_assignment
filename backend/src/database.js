@@ -29,7 +29,7 @@ export function transaction(database, work) {
   }
 }
 
-const migrations = ['001-initial.sql', '002-rss-snapshot.sql']
+const migrations = ['001-initial.sql', '002-rss-snapshot.sql', '003-slack-channels.sql']
   .map((file) => new URL(`./migrations/${file}`, import.meta.url));
 
 /** Apply committed migrations in order while preserving existing application data. */

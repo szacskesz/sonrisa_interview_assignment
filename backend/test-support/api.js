@@ -7,7 +7,7 @@ export async function createApiFixture(t, options) {
   t.after(() => app.close());
   await app.ready();
   app.database.exec(`
-    INSERT INTO users VALUES
+    INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES
       (1, 'admin@example.test', 'hash', 'admin', 0),
       (2, 'reader@example.test', 'hash', 'user', 0),
       (3, 'other@example.test', 'hash', 'user', 0);

@@ -26,7 +26,7 @@ test('rejects bad settings and rolls back the seed if an email belongs to a diff
   using database = openDatabase(':memory:');
   migrateDatabase(database);
   await assert.rejects(seedDemoAccounts(database, {}), /demo admin password/);
-  database.exec("INSERT INTO users VALUES (1, 'user@example.test', 'hash', 'admin', 0)");
+  database.exec("INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'user@example.test', 'hash', 'admin', 0)");
   await assert.rejects(seedDemoAccounts(database, env), /different role/);
   assert.equal(database.prepare('SELECT COUNT(*) AS count FROM users').get().count, 1);
 });

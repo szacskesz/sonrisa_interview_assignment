@@ -6,7 +6,7 @@ import { createSubscriptionStore } from '../src/subscriptions.js';
 test('stores subscription changes, retaining activation for a pause and resetting it for resume or topic edits', () => {
   using database = openDatabase(':memory:');
   migrateDatabase(database);
-  database.exec("INSERT INTO users VALUES (1, 'one@example.test', 'hash', 'user', 0)");
+  database.exec("INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'one@example.test', 'hash', 'user', 0)");
   let now = 100;
   const subscriptions = createSubscriptionStore(database, { now: () => now });
   const created = subscriptions.create(1, 'World');
@@ -29,7 +29,7 @@ test('stores subscription changes, retaining activation for a pause and resettin
 test('cannot read, change, or remove another account subscription', () => {
   using database = openDatabase(':memory:');
   migrateDatabase(database);
-  database.exec("INSERT INTO users VALUES (1, 'one@example.test', 'hash', 'user', 0)");
+  database.exec("INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'one@example.test', 'hash', 'user', 0)");
   const subscriptions = createSubscriptionStore(database);
   const { id } = subscriptions.create(1, 'World');
   assert.equal(subscriptions.get(2, id), undefined);
