@@ -57,3 +57,7 @@ The API process checks for due deliveries once per second. The worker cancels a 
 The first successful poll records the latest publication timestamp without queueing email. An empty snapshot records the initialization time as the starting point. Later polls freeze the latest timestamp as the upper bound and commit each page's jobs and checkpoint in one SQLite transaction. Restarting an enabled feed continues from its last committed page.
 
 The API process checks for due feeds once per second and runs one shared polling cycle per due feed. It saves attempt and success times and the latest error. Failed cycles retry after five seconds, doubling the delay up to five minutes. Disabling a feed or changing its URL invalidates in-flight results. Set `TRUSTED_RSS_URLS` to a comma-separated list when running with fixture URLs other than the default. Run one API process per demo database.
+
+## Extension points
+
+The feed poller accepts a source factory. A new source can return normalized events and provide its own snapshot and replay implementation. The worker accepts a map of delivery channels. To add Slack, register an adapter that sends the shared alert payload and reports the send outcome, then add destination resolution and eligibility for Slack subscriptions. The queue already stores the channel and destination with each job.

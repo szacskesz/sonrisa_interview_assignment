@@ -217,3 +217,9 @@ If no more questions let me know and i will advnace to phase 3
 ```
 
 Decision: the first successful poll after re-enabling establishes a fresh baseline without sending older items. A feed that stays enabled through an outage still catches up from the saved checkpoint. The design review has no remaining product questions. Phase 3 awaits the user's instruction to begin.
+
+## Phase 3 implementation
+
+> Okey, Continue with phase 3. For now please dont run parallel subagent on distinct/separate tasks, because the project is small its easier to work this way (without worktrees). So implement the tasks in the planned order one after one. If you have questions ask rather than assuming or creating workarounds.
+
+The implementation followed the numbered tasks sequentially in one workspace. The [Phase 3 implementation review](P3-task-04-implementation-review.md) records the verified findings, their regression tests, and the browser demo results.
