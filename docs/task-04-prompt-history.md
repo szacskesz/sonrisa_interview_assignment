@@ -111,3 +111,20 @@ Looks good to me, before continuing to the 2nd phase do you seen anything worth 
 - New and resumed subscriptions need a clear time boundary. The proposed default is to alert only on headlines published after the latest activation, even if an older headline appears in the next poll.
 - Docker and Compose are installed, but the Docker engine could not be reached from this session. Mailpit was absent from PATH. Verify a repeatable Mailpit startup path during the Phase 2 proof of concept.
 - The proof of concept should demonstrate that a failed queue write leaves the feed checkpoint intact, and that an email queued before restart appears in Mailpit after the worker resumes.
+
+## Phase 1 Recovery and demo setup decisions
+
+```text
+Decisions:
+
+1. we should send every missed event/news/etc while the server was down
+2. no, new users only get the new events after activation
+
+
+
+
+
+why would u use docker? i dont remember mentioning it. please explain
+```
+
+Decision: recover every eligible item since the saved checkpoint after downtime. New and resumed subscriptions receive only events published after their latest activation. The fake feed can reconstruct missed minutes in pages without an article archive. Docker was checked as an optional way to run Mailpit. The demo uses the standalone Mailpit executable.
