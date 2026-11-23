@@ -4,7 +4,7 @@ The browser tests used a simulated Slack provider, a fake RSS feed, and real Mai
 
 Backend verification covered the identity signature, nonce, workspace and token claims, account ownership, replay protection, migration, queue eligibility, and provider failure handling. The full verification run passed 62 backend tests, 21 Angular tests, and 14 Playwright tests, including the public Google News and USGS checks. The Angular production build passed.
 
-Slack browser linking and a received DM in the installed workspace remain to be verified. Follow the [live smoke-test steps](../../slack-alerts.md#verify-your-workspace).
+The operator confirmed receiving a real DM from the installed bot after manually pairing the local demo user with their Slack member ID. Slack rejected the plain HTTP localhost redirect during authorization. The browser-based **Connect Slack** flow still needs live verification with an HTTPS callback. See the [live smoke-test steps](../../slack-alerts.md#verify-your-workspace).
 
 ## Before connecting Slack
 

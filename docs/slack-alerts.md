@@ -21,9 +21,9 @@ The workspace installation lets the bot send direct messages. When a user clicks
 
 The bot requires `im:write` and `chat:write` bot scopes. When a user connects, the separate OpenID request uses `openid profile` to retrieve the signed workspace and member identity. SQLite stores the verified IDs and connection time. The user access token returned by Slack is discarded. The existing World Alerts sign-in is required for linking and stays in use afterwards. [OpenID discovery](https://slack.com/.well-known/openid-configuration) · [Slack bot authentication](https://docs.slack.dev/reference/methods/auth.test/)
 
-## Try the callback on localhost
+## Test real delivery on localhost
 
-Save `http://localhost:4200/api/slack/callback` under **OAuth & Permissions → Redirect URLs**. With the Slack credentials and `JWT_SECRET` set, start the backend from the repository root in PowerShell.
+For a delivery-only test, pair a local demo user with your Slack workspace and member IDs in its SQLite `users` row. Set `slack_workspace_id`, `slack_member_id`, and `slack_connected_at_ms` together. With the Slack credentials and `JWT_SECRET` set, start the backend from the repository root in PowerShell.
 
 ```powershell
 $env:WEB_ORIGIN = 'http://localhost:4200'
@@ -31,7 +31,7 @@ $env:SLACK_REDIRECT_URL = 'http://localhost:4200/api/slack/callback'
 pnpm --dir backend start
 ```
 
-In a second terminal, run `pnpm --dir frontend exec ng serve --host localhost --port 4200`. Open `http://localhost:4200` in Edge or Chrome, sign in, and click **Connect Slack**. Use the same hostname in the browser throughout the test. The application allows plain HTTP only for the exact `localhost` hostname and keeps the handshake cookie's `Secure` attribute. The local browser flow has been tested with a simulated Slack provider. Slack's live authorization and token exchange for the HTTP redirect still need verification. [Browser cookie behavior on localhost](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie#secure)
+In a second terminal, run `pnpm --dir frontend exec ng serve --host localhost --port 4200`. Open `http://localhost:4200`, sign in as that demo user, and select **Slack direct message** for the fake RSS topic. A fresh headline can be delivered to the linked Slack member. The HTTP redirect value enables the local adapter configuration. This delivery-only test does not submit it to Slack. Slack rejected that redirect during live authorization, so use HTTPS to test **Connect Slack**.
 
 ## Verify your workspace
 
