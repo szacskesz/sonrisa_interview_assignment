@@ -27,4 +27,8 @@ The RSS feeds page lets admins add, edit, enable, and disable feeds. It refreshe
 
 The deliveries page refreshes while open and displays the latest headline, source, delivery status, attempt count, and last error. Pending jobs with earlier attempts are shown as retrying.
 
+## Browser tests
+
+With Mailpit running, install Chromium once with `pnpm --dir frontend exec playwright install chromium` and run `pnpm --dir frontend e2e`. To use a supported Microsoft Edge installation, set `TEST_BROWSER_CHANNEL=msedge`. The tests build Angular, start the API and fixture on loopback addresses, and use a separate SQLite file and unique mailbox addresses. Set `TEST_SMTP_PORT` or `TEST_MAILPIT_URL` to override the local Mailpit defaults.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
