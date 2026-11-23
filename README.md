@@ -1,6 +1,6 @@
 # World Event Alerts
 
-World Event Alerts lets administrators configure RSS and USGS earthquake sources and lets users subscribe to topics for email alerts. The local demo includes a synthetic news feed and uses Mailpit to capture the emails.
+World Event Alerts lets administrators configure RSS and USGS earthquake sources and lets users subscribe to topics for email alerts or Slack direct messages. The local demo includes a synthetic news feed and uses Mailpit to capture the emails.
 
 ## Prerequisites
 
@@ -100,5 +100,7 @@ pnpm --dir frontend e2e
 To use an installed Microsoft Edge instead, set `TEST_BROWSER_CHANNEL=msedge` before running the suite. Set `TEST_MAILPIT_URL=http://127.0.0.1:18025` before running the backend tests to include their SMTP integration check.
 
 Set `TEST_LIVE_RSS=1` to include the live Google News check and `TEST_LIVE_USGS=1` to include the live USGS check. Each check requires internet access to its provider.
+
+The Slack browser tests use a simulated provider and require no Slack credentials. For the live workspace setup, see the [Slack configuration and smoke-test guide](docs/slack-alerts.md).
 
 See the [backend guide](docs/P3-task-04-backend.md) for configuration and API details and the [frontend guide](docs/P3-task-04-frontend.md) for browser test coverage.
