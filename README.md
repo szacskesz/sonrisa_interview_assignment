@@ -104,3 +104,7 @@ Set `TEST_LIVE_RSS=1` to include the live Google News check and `TEST_LIVE_USGS=
 The Slack browser tests use a simulated provider and require no Slack credentials. For the live workspace setup, see the [Slack configuration and smoke-test guide](docs/slack-alerts.md).
 
 See the [backend guide](docs/P3-task-04-backend.md) for configuration and API details and the [frontend guide](docs/P3-task-04-frontend.md) for browser test coverage.
+
+## Conversation prompt history
+
+[Shared conversation](https://chatgpt.com/s/cx_6b0456e110408191a2f3d5cf1c775c62) · [Prompt history file](docs/conversation-prompt-history.md)
