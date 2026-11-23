@@ -144,3 +144,11 @@ PLease create and visualize the planned database domain objects (tables) so i ca
 ```
 
 Result: the [database review](P2-task-04-database-review.md) shows the proposed relationships, and the [SQLite schema](P2-task-04-demo-schema.sql) lists the fields and constraints.
+
+## Phase 2 Task breakdown review
+
+```text
+Plase make smaller tasks, because `Create the Node and Angular projects and establish start and test commands. Add SQLite migrations and provision a demo admin and user`  is definitely too much. Database modellin, nodejs porject creation, nodejs database integration, nodejs rss integration, nodejs email integration, nodejs public API (for forntend) implementation, FE project scaffoldin, FE API integration, FE admin page implementation, FE user page implementation, and anyting else which could be separated.
+```
+
+Decision: split the [implementation tasks](P2-task-04-demo-implementation-plan.md#implementation-tasks) into individually reviewable changes. Each has an ID, dependencies, and a completion check.

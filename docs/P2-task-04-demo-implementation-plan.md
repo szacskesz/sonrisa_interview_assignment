@@ -4,13 +4,69 @@ Deliver a local demo where an admin configures a fake RSS feed, a user subscribe
 
 ## Implementation tasks
 
-| Order | Task | Completion check |
-| --- | --- | --- |
-| 1 | Create the Node and Angular projects and establish start and test commands. Add SQLite migrations and provision a demo admin and user. | Both projects start locally. The API opens a persistent database and can distinguish admin, regular user, and unauthenticated requests. |
-| 2 | Add RSS configuration and the fake Node.js feed. Implement the scheduler, source adapter, and checkpoint transactions. | An admin adds an allowed URL and updates its interval. A single scheduler fetches the due feed, establishes its baseline, catches up after downtime, and retains progress across restart. |
-| 3 | Implement subscriptions, matching, delivery jobs, retries, and the SMTP adapter. | A new headline creates an email for eligible recipients. A forced rollback leaves the checkpoint unchanged, and persisted jobs recover after restart. |
-| 4 | Add the Angular subscription and admin views. | A reviewer can sign in, manage subscriptions or feed settings as permitted, and see feed health and delivery results. |
-| 5 | Complete verification and review evidence, then prepare the demo walkthrough. | Unit and browser end-to-end tests pass. Capture the changed screens and a delivered message. Run AI code review after implementation and keep human review findings in the review record. |
+Each task has one reviewable outcome. Include the task's tests and public interface documentation with its change. Commit each completed task using its ID. Tasks with satisfied dependencies can start independently.
+
+### Database design and backend setup
+
+| ID | Task | Depends on | Completion check |
+| --- | --- | --- | --- |
+| P2-DB | Model the database | — | The [ER diagram](P2-task-04-database-review.md) and [SQL draft](P2-task-04-demo-schema.sql) are available for review. SQLite verified the schema. |
+| P3-01 | Scaffold the Node.js project | — | Fastify starts locally and the backend test command runs. |
+| P3-02 | Integrate SQLite with Node.js | P3-01 | The backend opens a configurable database file, enables foreign keys, and closes it cleanly. |
+| P3-03 | Add the schema migration | P2-DB, P3-02 | The migration creates the schema on a new database and can rerun without resetting existing data. |
+| P3-04 | Provision demo accounts | P3-03 | A repeatable seed command creates the admin and regular user with hashed passwords. |
+
+### RSS, matching, and email
+
+| ID | Task | Depends on | Completion check |
+| --- | --- | --- | --- |
+| P3-05 | Add the standalone fake RSS server | P3-01 | The endpoint serves one item per UTC minute and can page through missed minutes with a controlled clock. |
+| P3-06 | Integrate RSS parsing and fetching | P3-05 | The adapter reads and validates ordered pages from the fake feed and reports malformed responses. |
+| P3-07 | Implement feed configuration storage | P3-03 | An enabled feed's URL, topic, interval, and next poll time persist. Duplicate and untrusted URLs are rejected. |
+| P3-08 | Implement subscription storage and lifecycle | P3-03 | Creation, topic changes, pause, resume, and removal persist with the proper activation time. |
+| P3-09 | Implement news matching | P3-08 | A news item matches only active subscriptions for its topic that were activated before it was published. |
+| P3-10 | Implement the delivery queue | P3-03 | Jobs and attempts persist. Multiple matching subscriptions can link to one job per item and destination. |
+| P3-11 | Implement RSS checkpoint and catch-up | P3-06, P3-07, P3-09, P3-10 | The initial poll establishes a baseline. Each later page commits its checkpoint and jobs together, and recovery resumes at the last committed page. |
+| P3-12 | Implement the automatic feed scheduler | P3-11 | One polling cycle runs per due feed. Interval edits take effect, failures back off, and disabled or replaced feeds discard in-flight results. |
+| P3-13 | Integrate email over SMTP | P3-01 | A standalone adapter sends the expected message to Mailpit and classifies send failures. |
+| P3-14 | Implement the delivery worker | P3-08, P3-10, P3-13 | The worker rechecks subscription eligibility, runs pending jobs, retries transient failures, and records final outcomes. |
+
+### Node.js API for Angular
+
+| ID | Task | Depends on | Completion check |
+| --- | --- | --- | --- |
+| P3-15 | Implement the session API | P3-04 | Demo accounts can sign in and out. The API resolves the current account and rejects missing or expired sessions. |
+| P3-16 | Implement the topics API | P3-07, P3-15 | Signed-in users can list topics from enabled feeds. |
+| P3-17 | Implement the subscriptions API | P3-08, P3-16 | A user can manage their own subscriptions. Attempts to read or change another user's subscription fail. |
+| P3-18 | Implement the admin feeds API | P3-07, P3-15 | Admins can list feeds with poll health and create or update settings. Regular users are denied access. |
+| P3-19 | Implement the admin deliveries API | P3-10, P3-15 | Admins can list recent jobs, attempt counts, and the latest error. Regular users are denied access. |
+
+### Angular frontend
+
+| ID | Task | Depends on | Completion check |
+| --- | --- | --- | --- |
+| P3-20 | Scaffold the Angular project | — | Angular starts, builds, and runs its base tests independently of backend scaffolding. |
+| P3-21 | Integrate the session API | P3-15, P3-20 | The Angular session client handles sign-in, current-account lookup, sign-out, and session errors. |
+| P3-22 | Integrate the topics and subscriptions APIs | P3-16, P3-17, P3-21 | Typed Angular clients read topics and manage subscriptions with predictable validation errors. |
+| P3-23 | Integrate the admin feeds API | P3-18, P3-21 | The Angular admin client reads feed health and updates configuration. |
+| P3-24 | Integrate the admin deliveries API | P3-19, P3-21 | The Angular admin client reads delivery outcomes and handles loading failures. |
+| P3-25 | Build the sign-in page and protected routes | P3-21 | Demo users reach the pages for their role and signed-out users return to sign-in. |
+| P3-26 | Build the user subscription page | P3-22, P3-25 | A user can create, edit, pause, resume, and remove a subscription through the page. |
+| P3-27 | Build the admin feed page | P3-23, P3-25 | An admin can configure a feed and its interval, disable it, and see its poll health. |
+| P3-28 | Build the admin deliveries panel | P3-24, P3-25 | The admin can see recent alerts, outcomes, attempt counts, and the latest error. |
+
+### End-to-end tests, review, and delivery
+
+| ID | Task | Depends on | Completion check |
+| --- | --- | --- | --- |
+| P3-29 | Automate the browser demo | P3-12, P3-14, P3-26, P3-27, P3-28 | Playwright proves that a feed configured in admin produces a real email for a matching user and a visible admin delivery result. |
+| P3-30 | Automate recovery and eligibility scenarios | P3-29 | Controlled clocks and restart tests verify all missed items, the activation cutoff, retry, and duplicate prevention. |
+| P3-31 | Run AI code review | P3-30 | Review findings are verified and recorded before the verification phase. |
+| P4-01 | Run the full verification suites | P3-31 | Build, unit, and end-to-end results are recorded. Verified defects are fixed with regression tests. |
+| P4-02 | Collect human review evidence | P4-01 | The review document embeds screenshots of the changed UI and shows a captured test email. |
+| P4-03 | Apply and verify human review fixes | P4-02 | Any requested fixes are documented, committed separately, and checked with the relevant suites. |
+| P5-01 | Write and verify the demo runbook | P4-03 | The startup and walkthrough instructions work from a fresh setup. |
+| P5-02 | Prepare the submission | P5-01 | The repository includes the demo, evidence, prompt history, milestone commits, known limits, and follow-up work. |
 
 Use Angular CLI with standalone components, routing, and Signal Forms. Use Angular's generated unit test setup for the UI and Node's test runner for API, storage, and worker tests. Use Playwright for the browser workflow. Pin exact app dependencies at scaffolding after verifying compatibility with the Node 24 LTS runtime. The existing Angular developer skill covers implementation. The official curated Playwright skill was installed for browser verification and screenshots. [Angular compatibility](https://angular.dev/reference/versions), [Curated Playwright skill](https://github.com/openai/skills/tree/main/skills/.curated/playwright)
 
