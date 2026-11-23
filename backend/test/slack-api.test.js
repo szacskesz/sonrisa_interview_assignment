@@ -6,6 +6,7 @@ test('requires the initiating browser and account to confirm a single-use Slack 
   let timestamp = 1;
   const connection = { workspaceId: 'T123', memberId: 'U123' };
   const identity = {
+    workspaceId: connection.workspaceId,
     authorize: (state, nonce) => `https://slack.com/?state=${state}&nonce=${nonce}`,
     exchange: async (code, nonce) => {
       assert.equal(code, 'verified');

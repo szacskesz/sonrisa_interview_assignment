@@ -13,9 +13,9 @@ export function createFeedPoller({ database, feeds, matcher, queue, sourceFor, n
   `);
 
   function enqueue(feed, item, publishedAt) {
-    for (const destination of matcher.recipients(feed.topic, publishedAt)) {
+    for (const { channel, destination } of matcher.recipients(feed.topic, publishedAt)) {
       queue.enqueue({
-        feedId: feed.id, sourceUrl: feed.url, itemId: item.id, channel: 'email',
+        feedId: feed.id, sourceUrl: feed.url, itemId: item.id, channel,
         destination, title: item.title, topic: feed.topic, publisher: feed.publisher,
         itemUrl: item.url, publishedAt, aliases: item.aliases,
       }, now());

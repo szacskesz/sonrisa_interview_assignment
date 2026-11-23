@@ -53,13 +53,13 @@ export function createApp({
     migrateDatabase(database);
     const feeds = createFeedStore(database, { now });
     const subscriptions = createSubscriptionStore(database, { now });
-    const matcher = createMatcher(database);
+    const matcher = createMatcher(database, { slackWorkspaceId: slackIdentity?.workspaceId });
     const queue = createDeliveryQueue(database);
     const poll = createFeedPoller({ database, feeds, matcher, queue, sourceFor: selectSource, now });
     const pollFeeds = createFeedScheduler({ database, feeds, poll, now });
     const worker = createDeliveryWorker({
       queue, channels, now,
-      isEligible: (job) => matcher.isEligible(job.topic, job.published_at_ms, job.destination),
+      isEligible: (job) => matcher.isEligible(job.topic, job.published_at_ms, job.channel, job.destination),
     });
     app.services = { feeds, subscriptions, matcher, queue, pollFeeds, deliver: worker.tick };
     if (startBackground) {

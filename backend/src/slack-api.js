@@ -17,7 +17,8 @@ export function configureSlackApi(app, { identity, now }) {
     ).get(userId);
     return {
       available: Boolean(identity),
-      connection: slack_member_id ? { workspaceId: slack_workspace_id, memberId: slack_member_id } : null,
+      connection: slack_member_id && slack_workspace_id === identity?.workspaceId
+        ? { workspaceId: slack_workspace_id, memberId: slack_member_id } : null,
     };
   };
 

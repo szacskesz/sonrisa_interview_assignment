@@ -41,6 +41,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
     database.exec(`
       INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
       INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0), (2, 1, 'World', 'active', 0, 0);
+      INSERT INTO subscription_channels VALUES (1, 'email', 0), (2, 'email', 0);
     `);
     assert.equal(await poll(id), true);
     assert.deepEqual(jobs(database), []);
@@ -59,6 +60,7 @@ test('resumes missed pages from the last committed checkpoint after rollback and
       DROP TRIGGER reject_batch;
       INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (2, 'late@example.test', 'hash', 'user', 0);
       INSERT INTO subscriptions VALUES (3, 2, 'World', 'active', 0, ${anchor + 4 * minute});
+      INSERT INTO subscription_channels VALUES (3, 'email', ${anchor + 4 * minute});
     `);
     await poll(id);
     await poll(id);
@@ -85,6 +87,7 @@ test('records a clean empty baseline, then imports articles published afterwards
   database.exec(`
     INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
     INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0);
+    INSERT INTO subscription_channels VALUES (1, 'email', 0);
   `);
   await poll(id);
   assert.equal(feeds.get(id).initialized_at_ms, anchor);
@@ -108,6 +111,7 @@ test('imports newly visible public RSS items with tied and unordered dates, and 
   database.exec(`
     INSERT INTO users (id, email, password_hash, role, created_at_ms) VALUES (1, 'reader@example.test', 'hash', 'user', 0);
     INSERT INTO subscriptions VALUES (1, 1, 'World', 'active', 0, 0);
+    INSERT INTO subscription_channels VALUES (1, 'email', 0);
   `);
   await poll(id);
   assert.deepEqual(jobs(database), []);

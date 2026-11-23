@@ -21,7 +21,7 @@ function setup(database, channel, maxAttempts) {
   const matcher = createMatcher(database);
   const worker = createDeliveryWorker({
     queue, channels: new Map([['email', channel]]), maxAttempts, now,
-    isEligible: (job) => matcher.isEligible(job.topic, job.published_at_ms, job.destination),
+    isEligible: (job) => matcher.isEligible(job.topic, job.published_at_ms, job.channel, job.destination),
   });
   return {
     queue, worker, subscriptions, subscription,
