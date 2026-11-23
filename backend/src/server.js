@@ -1,6 +1,11 @@
+import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 
-const app = createApp({ logger: true, disableRequestLogging: true });
+const app = createApp({
+  databasePath: process.env.ALERTS_DB_PATH ?? fileURLToPath(new URL('../data/alerts.sqlite', import.meta.url)),
+  logger: true,
+  disableRequestLogging: true,
+});
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.once(signal, async () => {
