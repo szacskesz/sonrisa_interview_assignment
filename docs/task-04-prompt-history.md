@@ -136,3 +136,11 @@ Okey i started the docker engine, we can use it for that purpose. Ready for phas
 ``
 
 Decision: start Phase 2 and use Docker for the Mailpit demo inbox. Keep the Node.js services on the host. See the [implementation plan](P2-task-04-demo-implementation-plan.md).
+
+## Phase 2 Database review
+
+```text
+PLease create and visualize the planned database domain objects (tables) so i can verifiy them
+```
+
+Result: the [database review](P2-task-04-database-review.md) shows the proposed relationships, and the [SQLite schema](P2-task-04-demo-schema.sql) lists the fields and constraints.

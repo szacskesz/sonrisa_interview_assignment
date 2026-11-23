@@ -35,6 +35,8 @@ Reject unauthenticated requests with `401` and non-admin access to admin routes 
 
 ## Data and adapter contracts
 
+See the [database review](P2-task-04-database-review.md) for the table relationships and [reviewable SQLite schema](P2-task-04-demo-schema.sql).
+
 | Record | Fields and invariants |
 | --- | --- |
 | Accounts and sessions | User ID, email, password hash, and role. Session records expire and reference a user. |
