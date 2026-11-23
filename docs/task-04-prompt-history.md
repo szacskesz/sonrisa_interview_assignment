@@ -165,3 +165,18 @@ After reviewing the sql scheme pls epxlain what are the purpose of these tables:
 ```
 
 Explanation: a delivery job represents one notification, attempts record each send, and the link table identifies the subscriptions that matched the job. Sessions associate expiring login tokens with accounts. See the [database review](P2-task-04-database-review.md) for the relationships.
+
+## Phase 2 Database simplification review
+
+```text
+- so `delivery_attempts`  is only for logging? if so we dont need it
+- for sesions we cen use jwt so we dont need to store any sessions related data
+- why do we need to store `delivery_jobs` , cant we just send it right away after fetching the news/events/etc?
+- also the `delivery_job_subscriptions`   seems unnecessary just send every event to every "subscirber" which matches the given event source, topic, etc.
+
+
+
+Analzize my requirements, and if what I said doesnt make sense let me know, and ask questions
+```
+
+Recommendation pending confirmation: remove per-attempt history, use expiring signed JWTs without stored sessions, and recheck current subscription eligibility for the job's recipient without retaining a subscription link table. Keep a small delivery job record per item, channel, and destination so the service can send promptly and recover individual failed sends without replaying the whole batch. The open questions are delivery durability, JWT logout behavior, and topic-only versus feed-specific matching in the demo.
