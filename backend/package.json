@@ -9,6 +9,7 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "start": "node src/server.js",
+    "seed": "node src/seed.js",
     "test": "node --test"
   },
   "dependencies": {

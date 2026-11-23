@@ -1,6 +1,12 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { fileURLToPath } from 'node:url';
+
+/** Return the SQLite path used by both the server and the demo seed command. */
+export function configuredDatabasePath(env = process.env) {
+  return env.ALERTS_DB_PATH ?? fileURLToPath(new URL('../data/alerts.sqlite', import.meta.url));
+}
 
 /** Open an application SQLite file or an isolated :memory: database. */
 export function openDatabase(path) {

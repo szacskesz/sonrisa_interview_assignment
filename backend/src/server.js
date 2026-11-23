@@ -1,8 +1,8 @@
-import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
+import { configuredDatabasePath } from './database.js';
 
 const app = createApp({
-  databasePath: process.env.ALERTS_DB_PATH ?? fileURLToPath(new URL('../data/alerts.sqlite', import.meta.url)),
+  databasePath: configuredDatabasePath(),
   logger: true,
   disableRequestLogging: true,
 });
