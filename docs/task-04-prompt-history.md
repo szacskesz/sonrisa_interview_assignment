@@ -83,4 +83,12 @@ Decision: admins manage feed URLs and per-feed intervals. The application polls 
 Also include in the plan to create a "fake" rss  node server for testing purposes, which will generate a news every minute with "News 2026-11-23T09:02:00.000Z" formatted content.
 ``
 
-Decision: build the [fake RSS server](P1-task-04-alerts-feature-design.md#fake-rss-server-for-tests) in Phase 2 with one item per UTC minute and a controllable clock.
+Decision: build the [fake RSS server](P1-task-04-alerts-feature-design.md#fake-rss-server-for-the-demo-and-tests) in Phase 2 with one item per UTC minute and a controllable clock.
+
+## Phase 1 Demo scope
+
+```text
+the main goal is to create a working demo with email and the fake rss. SO check other requirements for those. we will integracte slack, and other event sources later, BUT keep it modularized so its easy to integrate
+```
+
+Decision: the demo uses the real RSS and SMTP adapters with the fake feed and a local Mailpit inbox. Keep user subscriptions, shared admin polling settings, and delivery evidence in scope. Schedule Slack and additional event sources as follow-ups that use the same adapter boundaries.
