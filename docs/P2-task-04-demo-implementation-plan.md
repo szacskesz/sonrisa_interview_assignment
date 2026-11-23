@@ -53,3 +53,26 @@ The fake server exposes `GET /rss.xml`. The base request returns the latest item
 - **Proof of concept.** Exercise real HTTP, RSS parsing, a file-backed SQLite checkpoint and jobs, and SMTP. Establish a baseline, leave more than one page of missed headlines, reopen SQLite, and confirm catch-up honors activation. Inject a rollback before committing a page, then verify recovery and repeat the poll to check for duplicates.
 - **Application tests.** Cover input validation, access control, empty baseline, same-minute repeats, pages after restart, malformed items, interval edits, feed disable or URL replacement during polling, pause and resume, transient SMTP failures, and deduplication across overlapping subscriptions.
 - **Browser walkthrough.** Sign in as admin, add the trusted fake feed with a 60-second interval, and verify the first poll. Sign in as a user, create a matching subscription, and confirm the next headline reaches Mailpit. Verify that its delivery status appears in admin. Use a controlled clock in automated tests. Use real minute boundaries in the manual demo.
+
+## Proof of concept results
+
+The [prototype under poc/phase-2](../poc/phase-2/) ran with Node 24.22.1, pnpm 11.25.0, Feedsmith 3.0.1, Nodemailer 10.6.1, and Mailpit v1.34.0. The application is still planned for Phase 3. The prototype drives polling explicitly and uses fixture subscriptions so it can test the integration without the Angular views, Fastify routes, or a live scheduler.
+
+The run verified these behaviors:
+
+- The first RSS poll saved the latest publication timestamp without creating jobs. A separate run of the fake server returned the expected UTC minute headline over HTTP.
+- After six simulated minutes of downtime, the fixture exposed the missing headlines over three pages. An injected failure rolled back a page's jobs and checkpoint. Reopening the SQLite file recovered from the last committed page.
+- Repeating the poll queued no duplicate emails. Overlapping subscriptions to the same address produced one email per headline. An unrelated topic produced no sends.
+- An injected delivery failure left the jobs pending. The next pass sent real SMTP messages to Mailpit. Its API confirmed six exact subjects for the original subscriber and two for a subscriber who activated during the gap. It also confirmed the headline, topic, and source in the message body.
+
+The first body assertion assumed Unix line endings. Mailpit's message API returned SMTP CRLF line endings. The revised assertion compares the individual lines and the full verification passed. The skill catalog helper had a certificate verification error. The official curated Playwright skill was located in the catalog repository and installed with the installer using Git and the Windows certificate store.
+
+From the repository root, start Mailpit if the demo container is absent, then install the locked dependencies and run the check:
+
+```powershell
+docker run --detach --rm --name sonrisa-alerts-mailpit -p 127.0.0.1:11025:1025 -p 127.0.0.1:18025:8025 axllent/mailpit:v1.34.0
+pnpm --dir poc/phase-2 install --frozen-lockfile
+pnpm --dir poc/phase-2 verify
+```
+
+Open the [Mailpit inbox](http://127.0.0.1:18025) to inspect the test messages. For standalone Mailpit with default ports, set `POC_SMTP_PORT=1025` and `POC_INBOX_PORT=8025` before running the check. To inspect the synthetic feed separately with the system clock, run `node poc/phase-2/fake-rss.mjs` and open the [fixture endpoint](http://127.0.0.1:18080/rss.xml).
