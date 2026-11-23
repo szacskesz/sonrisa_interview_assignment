@@ -1,37 +1,6 @@
-import { expect, request } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { account, configureFeed, minute, subjects, subscribe, title } from './demo-api.mjs';
 import { signIn, test } from './demo-fixture.mjs';
-
-const minute = 60_000;
-
-async function account(demo, email) {
-  const client = await request.newContext({ baseURL: demo.url, extraHTTPHeaders: { origin: demo.url } });
-  const login = await client.post('/api/session', { data: { email, password: demo.password } });
-  if (!login.ok()) {
-    await client.dispose();
-    throw new Error(`API sign-in returned HTTP ${login.status()}`);
-  }
-  return client;
-}
-
-async function configureFeed(demo, admin) {
-  const response = await admin.post('/api/admin/feeds', {
-    data: { url: demo.feedUrl, publisher: 'Sonrisa Demo News', topic: 'World News', pollIntervalSeconds: 60 },
-  });
-  expect(response.status()).toBe(201);
-  return response.json();
-}
-
-async function subscribe(user) {
-  const response = await user.post('/api/subscriptions', { data: { topic: 'World News' } });
-  expect(response.status()).toBe(201);
-  return response.json();
-}
-
-async function subjects(demo, destination) {
-  return (await demo.messages(destination)).map(({ Subject }) => Subject).sort();
-}
-
-const title = (timestamp) => `News ${new Date(timestamp).toISOString()}`;
 
 test('replays all missed news after restart, respects activation and retries a failure once', async ({ demo }) => {
   const admin = await account(demo, demo.admin);
