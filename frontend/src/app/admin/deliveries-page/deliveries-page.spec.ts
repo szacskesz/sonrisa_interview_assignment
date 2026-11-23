@@ -3,7 +3,7 @@ import { settle } from '../../testing/dom';
 import { DeliveriesApi, DeliveryRecord } from '../deliveries-api';
 import { DeliveriesPage } from './deliveries-page';
 
-const row: DeliveryRecord = { id: 1, title: 'Headline', publisher: 'Demo RSS',
+const row: DeliveryRecord = { id: 1, title: 'Headline', publisher: 'Demo RSS', channel: 'slack',
   status: 'pending', attemptCount: 2, lastError: 'Temporary failure' };
 
 function setup(list: () => Promise<DeliveryRecord[]>) {
@@ -14,14 +14,14 @@ function setup(list: () => Promise<DeliveryRecord[]>) {
 }
 
 describe('Deliveries page', () => {
-  it('shows the job title, source, status, attempts and latest error', async () => {
+  it('shows the job title, source, channel, status, attempts and latest error', async () => {
     const { root, stable } = setup(async () => [row, { ...row, id: 2, status: 'sent', lastError: null }]);
     await stable();
     const rows = [...root.querySelectorAll<HTMLTableRowElement>('tbody tr')];
     expect([...rows[0].cells].map((cell) => cell.textContent)).toEqual([
-      'Headline', 'Demo RSS', 'Retrying', '2', 'Temporary failure',
+      'Headline', 'Demo RSS', 'Slack DM', 'Retrying', '2', 'Temporary failure',
     ]);
-    expect(rows[1].cells[2].textContent).toBe('Sent');
+    expect(rows[1].cells[3].textContent).toBe('Sent');
   });
 
   it('shows load errors and lets an administrator retry into the empty state', async () => {

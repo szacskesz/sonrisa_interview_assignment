@@ -17,7 +17,7 @@ describe('DeliveriesApi', () => {
   afterEach(() => http.verify());
 
   it('loads recent outcomes and preserves attempt details', async () => {
-    const delivery: DeliveryRecord = { id: 4, title: 'Headline', publisher: 'Demo', status: 'failed',
+    const delivery: DeliveryRecord = { id: 4, title: 'Headline', publisher: 'Demo', channel: 'slack', status: 'failed',
       attemptCount: 2, lastError: 'Rejected' };
     const list = api.list();
     http.expectOne({ method: 'GET', url: path }).flush({ deliveries: [delivery] });

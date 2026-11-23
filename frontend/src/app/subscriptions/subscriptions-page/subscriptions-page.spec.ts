@@ -1,12 +1,15 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { Session } from '../../core/session';
 import { settle, stubDialogs } from '../../testing/dom';
+import { SlackApi, SlackStatus } from '../slack-api';
 import { SubscriptionRecord, SubscriptionsApi } from '../subscriptions-api';
 import { SubscriptionsPage } from './subscriptions-page';
 
 const row: SubscriptionRecord = {
-  id: 1, topic: 'World', status: 'active', destination: 'user@example.test', createdAt: 1, activatedAt: 1,
+  id: 1, topic: 'World', status: 'active', channels: ['email'],
+  destination: 'user@example.test', createdAt: 1, activatedAt: 1,
 };
 
 function setup() {
@@ -17,10 +20,16 @@ function setup() {
     update: vi.fn(),
     remove: vi.fn().mockResolvedValue(undefined),
   };
+  const slack = {
+    status: vi.fn<() => Promise<SlackStatus>>().mockResolvedValue({ available: true, connection: null }),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+  };
   TestBed.configureTestingModule({
     imports: [SubscriptionsPage],
     providers: [
+      provideRouter([]),
       { provide: SubscriptionsApi, useValue: api },
+      { provide: SlackApi, useValue: slack },
       { provide: Session, useValue: { account: signal({ id: 2, email: row.destination, role: 'user' }) } },
     ],
   });
@@ -31,7 +40,7 @@ function setup() {
   const submit = (area: Element) => area.querySelector('form')!
     .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   const settled = () => settle(fixture);
-  return { api, root, button, submit, settled };
+  return { api, slack, root, button, submit, settled };
 }
 
 describe('Subscriptions page', () => {
@@ -49,7 +58,7 @@ describe('Subscriptions page', () => {
     select.dispatchEvent(new Event('input'));
     submit(editor);
     await settled();
-    expect(api.create).toHaveBeenCalledWith('World');
+    expect(api.create).toHaveBeenCalledWith('World', ['email']);
     expect(root.textContent).toContain('Subscription added.');
 
     api.update.mockResolvedValueOnce({ ...row, topic: 'Markets', activatedAt: 2 });
@@ -60,7 +69,7 @@ describe('Subscriptions page', () => {
     select.dispatchEvent(new Event('input'));
     submit(editor);
     await settled();
-    expect(api.update).toHaveBeenLastCalledWith(row.id, { topic: 'Markets' });
+    expect(api.update).toHaveBeenLastCalledWith(row.id, { topic: 'Markets', channels: ['email'] });
 
     api.update.mockResolvedValueOnce({ ...row, topic: 'Markets', status: 'paused' }).mockResolvedValueOnce(row);
     button('Pause').click();
@@ -95,5 +104,28 @@ describe('Subscriptions page', () => {
     expect(root.textContent).toContain('No topics are available');
     expect(root.querySelector('tbody')?.textContent).toContain('World');
     expect(button('Pause').disabled).toBe(false);
+  });
+
+  it('keeps disconnected Slack preferences visible and prevents saving an empty selection', async () => {
+    const { settled, root, api, slack, button, submit } = setup();
+    api.list.mockResolvedValue([{ ...row, channels: ['slack'] }]);
+    slack.status.mockResolvedValue({ available: true, connection: { workspaceId: 'T123', memberId: 'U123' } });
+    await settled();
+    expect(root.textContent).toContain('Connected to workspace T123');
+    button('Disconnect Slack').click();
+    await settled();
+    expect(slack.disconnect).toHaveBeenCalledOnce();
+    expect(root.textContent).toContain('Slack needs connection');
+    stubDialogs(root);
+    button('Edit').click();
+    await settled();
+    const dialog = root.querySelector<HTMLDialogElement>('dialog[open]')!;
+    const [, slackCheckbox] = dialog.querySelectorAll<HTMLInputElement>('input[type=checkbox]');
+    expect(slackCheckbox.checked).toBe(true);
+    slackCheckbox.click();
+    submit(dialog);
+    await settled();
+    expect(dialog.textContent).toContain('Choose at least one delivery channel.');
+    expect(api.update).not.toHaveBeenCalled();
   });
 });

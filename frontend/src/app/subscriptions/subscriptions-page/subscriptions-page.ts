@@ -1,9 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, OnInit, signal, viewChild, WritableSignal } from '@angular/core';
-import { form, FormField, required, submit } from '@angular/forms/signals';
+import { disabled, form, FormField, required, submit, validate } from '@angular/forms/signals';
+import { ActivatedRoute, Router } from '@angular/router';
 import { apiError } from '../../core/api-error';
 import { Session } from '../../core/session';
-import { SubscriptionRecord, SubscriptionsApi } from '../subscriptions-api';
+import { SlackApi, SlackStatus } from '../slack-api';
+import { AlertChannel, SubscriptionRecord, SubscriptionsApi } from '../subscriptions-api';
 
 @Component({
   imports: [DatePipe, FormField],
@@ -13,6 +15,9 @@ import { SubscriptionRecord, SubscriptionsApi } from '../subscriptions-api';
 })
 export class SubscriptionsPage implements OnInit {
   private readonly api = inject(SubscriptionsApi);
+  private readonly slackApi = inject(SlackApi);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly editDialog = viewChild.required<ElementRef<HTMLDialogElement>>('editDialog');
   private readonly removeDialog = viewChild.required<ElementRef<HTMLDialogElement>>('removeDialog');
   protected readonly account = inject(Session).account;
@@ -26,15 +31,62 @@ export class SubscriptionsPage implements OnInit {
   protected readonly pending = signal(false);
   protected readonly editing = signal<SubscriptionRecord | null>(null);
   protected readonly removing = signal<SubscriptionRecord | null>(null);
+  protected readonly slack = signal<SlackStatus | null>(null);
+  protected readonly slackError = signal('');
+  protected readonly slackConnection = computed(() => this.slack()?.connection);
   protected readonly unavailableTopic = computed(() => {
     const topic = this.editing()?.topic;
     return topic && !this.topics().includes(topic) ? topic : '';
   });
-  private readonly model = signal({ topic: '' });
-  protected readonly editor = form(this.model, (fields) => required(fields.topic));
+  private readonly model = signal({ topic: '', email: true, slack: false });
+  protected readonly editor = form(this.model, (fields) => {
+    required(fields.topic);
+    disabled(fields.slack, () => !this.slackConnection() && !this.editing()?.channels.includes('slack'));
+    validate(fields, ({ value }) => value().email || value().slack ? null
+      : { kind: 'channels', message: 'Choose at least one delivery channel.' });
+  });
 
   ngOnInit(): void {
     void this.load();
+    void this.loadSlack();
+  }
+
+  protected async loadSlack(): Promise<void> {
+    const result = this.route.snapshot.queryParamMap.get('slack');
+    this.slackError.set('');
+    if (result) {
+      await this.router.navigate([], { relativeTo: this.route, queryParams: { slack: null },
+        queryParamsHandling: 'merge', replaceUrl: true });
+    }
+    if (result === 'confirm') {
+      await this.mutate(async () => {
+        this.slack.set(await this.slackApi.confirm());
+        this.feedback.set('Slack connected.');
+      }, this.slackError, 'Could not confirm the Slack connection.');
+      if (this.slack()) return;
+    } else if (result === 'failed') {
+      this.slackError.set('Slack connection did not complete. Try again when you are ready.');
+    }
+    try {
+      this.slack.set(await this.slackApi.status());
+    } catch (error) {
+      this.slackError.set(apiError(error, 'Could not load the Slack connection.').message);
+    }
+  }
+
+  protected async connectSlack(): Promise<void> {
+    await this.mutate(async () => {
+      const { authorizeUrl } = await this.slackApi.start();
+      window.location.assign(authorizeUrl);
+    }, this.slackError, 'Could not start the Slack connection.');
+  }
+
+  protected async disconnectSlack(): Promise<void> {
+    await this.mutate(async () => {
+      await this.slackApi.disconnect();
+      this.slack.update((status) => status && { ...status, connection: null });
+      this.feedback.set('Slack disconnected.');
+    }, this.slackError, 'Could not disconnect Slack.');
   }
 
   protected async load(): Promise<void> {
@@ -54,7 +106,10 @@ export class SubscriptionsPage implements OnInit {
   protected openEditor(row: SubscriptionRecord | null = null): void {
     this.editing.set(row);
     this.dialogError.set('');
-    this.editor().reset({ topic: row?.topic ?? '' });
+    this.editor().reset({
+      topic: row?.topic ?? '', email: row?.channels.includes('email') ?? true,
+      slack: row?.channels.includes('slack') ?? false,
+    });
     this.editDialog().nativeElement.showModal();
   }
 
@@ -75,12 +130,15 @@ export class SubscriptionsPage implements OnInit {
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
     await submit(this.editor, () => this.mutate(async () => {
-      const { topic } = this.model();
+      const { topic, email, slack } = this.model();
+      const channels: AlertChannel[] = [];
+      if (email) channels.push('email');
+      if (slack) channels.push('slack');
       const editing = this.editing();
       if (editing) {
-        this.replace(await this.api.update(editing.id, { topic }));
+        this.replace(await this.api.update(editing.id, { topic, channels }));
       } else {
-        const row = await this.api.create(topic);
+        const row = await this.api.create(topic, channels);
         this.rows.update((rows) => [...rows, row]);
       }
       this.editDialog().nativeElement.close();

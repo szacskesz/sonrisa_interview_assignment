@@ -18,7 +18,7 @@ export function createDeliveryQueue(database) {
       AND source_item_id IN (SELECT value FROM json_each(?)) LIMIT 1
   `);
   const recent = database.prepare(`
-    SELECT id, title, publisher, status, attempt_count, last_error
+    SELECT id, title, publisher, channel, status, attempt_count, last_error
     FROM delivery_jobs ORDER BY id DESC LIMIT 100
   `);
   const claim = database.prepare(`

@@ -24,6 +24,6 @@ test('restricts and lists the latest 100 delivery outcomes with attempt summarie
   const { deliveries } = response.json();
   assert.equal(deliveries.length, 100);
   assert.deepEqual(deliveries[0], { id: 101, title: 'Headline 101', publisher: 'Fixture',
-    status: 'failed', attemptCount: 1, lastError: 'SMTP rejected the message' });
+    channel: 'email', status: 'failed', attemptCount: 1, lastError: 'SMTP rejected the message' });
   assert.equal(deliveries.at(-1).id, 2);
 });

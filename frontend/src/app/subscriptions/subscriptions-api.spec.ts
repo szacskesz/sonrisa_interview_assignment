@@ -7,7 +7,8 @@ import { SubscriptionRecord, SubscriptionsApi } from './subscriptions-api';
 describe('SubscriptionsApi', () => {
   const path = '/api/subscriptions';
   const row: SubscriptionRecord = {
-    id: 7, status: 'active', topic: 'World', destination: 'reader@example.test', createdAt: 1, activatedAt: 1,
+    id: 7, status: 'active', topic: 'World', channels: ['email', 'slack'],
+    destination: 'reader@example.test', createdAt: 1, activatedAt: 1,
   };
   let api: SubscriptionsApi;
   let http: HttpTestingController;
@@ -29,9 +30,9 @@ describe('SubscriptionsApi', () => {
   });
 
   it('creates, updates and removes a subscription by sending only supported fields', async () => {
-    const create = api.create('World');
+    const create = api.create('World', ['email', 'slack']);
     const post = http.expectOne({ method: 'POST', url: path });
-    expect(post.request.body).toEqual({ topic: 'World' });
+    expect(post.request.body).toEqual({ topic: 'World', channels: ['email', 'slack'] });
     post.flush(row);
     expect(await create).toEqual(row);
 

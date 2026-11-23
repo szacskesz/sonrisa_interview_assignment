@@ -8,6 +8,7 @@ export interface DeliveryRecord {
   id: number;
   title: string;
   publisher: string;
+  channel: string;
   status: DeliveryStatus;
   attemptCount: number;
   lastError: string | null;

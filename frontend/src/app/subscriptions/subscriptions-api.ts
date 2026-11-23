@@ -2,16 +2,19 @@ import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+export type AlertChannel = 'email' | 'slack';
+
 export interface SubscriptionRecord {
   id: number;
   topic: string;
   status: 'active' | 'paused';
+  channels: AlertChannel[];
   destination: string;
   createdAt: number;
   activatedAt: number;
 }
 
-export type SubscriptionChanges = Partial<Pick<SubscriptionRecord, 'topic' | 'status'>>;
+export type SubscriptionChanges = Partial<Pick<SubscriptionRecord, 'topic' | 'status' | 'channels'>>;
 
 const path = '/api/subscriptions';
 
@@ -30,8 +33,8 @@ export class SubscriptionsApi {
     return subscriptions;
   }
 
-  create(topic: string): Promise<SubscriptionRecord> {
-    return firstValueFrom(this.http.post<SubscriptionRecord>(path, { topic }));
+  create(topic: string, channels?: AlertChannel[]): Promise<SubscriptionRecord> {
+    return firstValueFrom(this.http.post<SubscriptionRecord>(path, { topic, channels }));
   }
 
   update(id: number, changes: SubscriptionChanges): Promise<SubscriptionRecord> {

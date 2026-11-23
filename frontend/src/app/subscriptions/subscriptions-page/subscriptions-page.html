@@ -2,7 +2,7 @@
   <div>
     <h1>Subscriptions</h1>
     @if (account(); as current) {
-      <p class="secondary">Alerts go to {{ current.email }}.</p>
+      <p class="secondary">Email alerts go to {{ current.email }}.</p>
     }
   </div>
   <button type="button" class="primary" [disabled]="loading() || pending() || !topics().length"
@@ -15,6 +15,25 @@
 @if (actionError(); as message) {
   <p class="inline-error" role="alert">{{ message }}</p>
 }
+<section class="state-panel slack-settings" aria-labelledby="slack-heading">
+  <h2 id="slack-heading">Slack connection</h2>
+  @if (slackError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+  @if (slack(); as status) {
+    @if (status.connection; as connection) {
+      <p>Connected to workspace {{ connection.workspaceId }} as member {{ connection.memberId }}.</p>
+      <button type="button" [disabled]="pending()" (click)="disconnectSlack()">Disconnect Slack</button>
+    } @else if (status.available) {
+      <p>Connect your Slack account to receive direct messages from World Alerts.</p>
+      <button type="button" [disabled]="pending()" (click)="connectSlack()">Connect Slack</button>
+    } @else {
+      <p class="secondary">Slack delivery is unavailable on this installation.</p>
+    }
+  } @else if (slackError()) {
+    <button type="button" (click)="loadSlack()">Retry Slack connection check</button>
+  } @else {
+    <p role="status">Checking Slack connection…</p>
+  }
+</section>
 @if (loading()) {
   <p class="state-panel" role="status">Loading subscriptions…</p>
 } @else if (loadError(); as message) {
@@ -30,15 +49,16 @@
   @if (rows().length === 0 && topics().length > 0) {
     <section class="state-panel">
       <h2>No subscriptions yet</h2>
-      <p>Choose a topic to start receiving email alerts.</p>
+      <p>Choose a topic to start receiving alerts.</p>
     </section>
   }
   @if (rows().length > 0) {
     <div class="table-frame">
       <table class="subscriptions-table" aria-label="Your subscriptions" role="table">
-        <colgroup><col><col><col><col></colgroup>
+        <colgroup><col><col><col><col><col></colgroup>
         <thead role="rowgroup"><tr role="row">
           <th scope="col" role="columnheader">Topic</th><th scope="col" role="columnheader">Status</th>
+          <th scope="col" role="columnheader">Channels</th>
           <th scope="col" role="columnheader">Activated (UTC)</th><th scope="col" role="columnheader">Actions</th>
         </tr></thead>
         <tbody role="rowgroup">
@@ -48,6 +68,13 @@
               <td role="cell" data-label="Status"><span class="badge" [class.good]="row.status === 'active'">
                 {{ row.status === 'active' ? 'Active' : 'Paused' }}
               </span></td>
+              <td role="cell" data-label="Channels">
+                <div class="subscription-channels">
+                  @for (channel of row.channels; track channel) {
+                    <span class="badge">{{ channel === 'email' ? 'Email' : slackConnection() ? 'Slack DM' : 'Slack needs connection' }}</span>
+                  }
+                </div>
+              </td>
               <td role="cell" data-label="Activated (UTC)">{{ row.activatedAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }}</td>
               <td role="cell" data-label="Actions">
                 <div class="actions">
@@ -66,7 +93,7 @@
 
 <dialog #editDialog aria-labelledby="subscription-title" (cancel)="keepDialogOpen($event)">
   <h2 id="subscription-title">{{ editing() ? 'Edit subscription' : 'Add subscription' }}</h2>
-  <p class="secondary">{{ editing() ? 'Changing the topic starts alerts from the new activation time.' : 'You will receive email for new headlines after activation.' }}</p>
+  <p class="secondary">{{ editing() ? 'Changing the topic starts alerts from the new activation time.' : 'You will receive alerts for new events after activation.' }}</p>
   <form novalidate (submit)="save($event)">
     <label>Topic
       <select [formField]="editor.topic">
@@ -79,7 +106,18 @@
         }
       </select>
     </label>
+    <fieldset class="channel-options">
+      <legend>Send alerts by</legend>
+      <label class="checkbox"><input type="checkbox" [formField]="editor.email"> Email</label>
+      <label class="checkbox"><input type="checkbox" [formField]="editor.slack"> Slack direct message</label>
+      @if (!slackConnection()) {
+        <p class="secondary">Connect Slack to receive direct messages.</p>
+      }
+    </fieldset>
     @if (dialogError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+    @if (editor().touched() && editor().errors().length) {
+      <p class="inline-error" role="alert">{{ editor().errors()[0].message }}</p>
+    }
     @if (editor.topic().touched() && editor.topic().invalid()) {
       <p class="inline-error" role="alert">Choose a topic.</p>
     }
