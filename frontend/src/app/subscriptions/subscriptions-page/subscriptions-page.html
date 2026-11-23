@@ -1,0 +1,103 @@
+<div class="screen-heading">
+  <div>
+    <h1>Subscriptions</h1>
+    @if (account(); as current) {
+      <p class="secondary">Alerts go to {{ current.email }}.</p>
+    }
+  </div>
+  <button type="button" class="primary" [disabled]="loading() || pending() || !topics().length"
+    (click)="openEditor()">Add subscription</button>
+</div>
+
+@if (feedback(); as message) {
+  <p class="notice" role="status">{{ message }}</p>
+}
+@if (actionError(); as message) {
+  <p class="inline-error" role="alert">{{ message }}</p>
+}
+@if (loading()) {
+  <p class="state-panel" role="status">Loading subscriptions…</p>
+} @else if (loadError(); as message) {
+  <section class="state-panel">
+    <h2>Subscriptions unavailable</h2>
+    <p role="alert">{{ message }}</p>
+    <button type="button" (click)="load()">Try again</button>
+  </section>
+} @else {
+  @if (!topics().length) {
+    <p class="notice">No topics are available. An administrator can enable an RSS feed to make its topic available.</p>
+  }
+  @if (rows().length === 0 && topics().length > 0) {
+    <section class="state-panel">
+      <h2>No subscriptions yet</h2>
+      <p>Choose a topic to start receiving email alerts.</p>
+    </section>
+  }
+  @if (rows().length > 0) {
+    <div class="table-frame">
+      <table class="subscriptions-table" aria-label="Your subscriptions" role="table">
+        <colgroup><col><col><col><col></colgroup>
+        <thead role="rowgroup"><tr role="row">
+          <th scope="col" role="columnheader">Topic</th><th scope="col" role="columnheader">Status</th>
+          <th scope="col" role="columnheader">Activated (UTC)</th><th scope="col" role="columnheader">Actions</th>
+        </tr></thead>
+        <tbody role="rowgroup">
+          @for (row of rows(); track row.id) {
+            <tr role="row">
+              <td role="cell" data-label="Topic">{{ row.topic }}</td>
+              <td role="cell" data-label="Status"><span class="badge" [class.good]="row.status === 'active'">
+                {{ row.status === 'active' ? 'Active' : 'Paused' }}
+              </span></td>
+              <td role="cell" data-label="Activated (UTC)">{{ row.activatedAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }}</td>
+              <td role="cell" data-label="Actions">
+                <div class="actions">
+                  <button type="button" [disabled]="pending() || !topics().length" (click)="openEditor(row)">Edit</button>
+                  <button type="button" [disabled]="pending()" (click)="toggle(row)">{{ row.status === 'active' ? 'Pause' : 'Resume' }}</button>
+                  <button type="button" class="danger" [disabled]="pending()" (click)="confirmRemove(row)">Remove</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+<dialog #editDialog aria-labelledby="subscription-title" (cancel)="keepDialogOpen($event)">
+  <h2 id="subscription-title">{{ editing() ? 'Edit subscription' : 'Add subscription' }}</h2>
+  <p class="secondary">{{ editing() ? 'Changing the topic starts alerts from the new activation time.' : 'You will receive email for new headlines after activation.' }}</p>
+  <form novalidate (submit)="save($event)">
+    <label>Topic
+      <select [formField]="editor.topic">
+        <option value="">Choose a topic</option>
+        @if (unavailableTopic(); as topic) {
+          <option [value]="topic">{{ topic }} (currently unavailable)</option>
+        }
+        @for (topic of topics(); track topic) {
+          <option [value]="topic">{{ topic }}</option>
+        }
+      </select>
+    </label>
+    @if (dialogError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+    @if (editor.topic().touched() && editor.topic().invalid()) {
+      <p class="inline-error" role="alert">Choose a topic.</p>
+    }
+    <div class="form-actions">
+      <button type="button" [disabled]="pending()" (click)="closeDialog(editDialog)">Cancel</button>
+      <button class="primary" [disabled]="pending()">Save subscription</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog #removeDialog aria-labelledby="remove-title" (cancel)="keepDialogOpen($event)">
+  <h2 id="remove-title">Remove subscription?</h2>
+  <p>Future alerts for this subscription to {{ removing()?.topic }} will stop.</p>
+  <form (submit)="remove($event)">
+    @if (dialogError(); as message) { <p class="inline-error" role="alert">{{ message }}</p> }
+    <div class="form-actions">
+      <button type="button" autofocus [disabled]="pending()" (click)="closeDialog(removeDialog)">Cancel</button>
+      <button class="danger primary" [disabled]="pending()">Remove subscription</button>
+    </div>
+  </form>
+</dialog>

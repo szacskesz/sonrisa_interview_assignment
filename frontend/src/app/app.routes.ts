@@ -4,7 +4,10 @@ import { RouteState } from './route-state';
 
 export const routes: Routes = [
   { path: 'sign-in', title: 'Sign in', canActivate: [signInGuard], loadComponent: () => import('./sign-in/sign-in').then((module) => module.SignIn) },
-  { path: 'subscriptions', title: 'Subscriptions', canActivate: [requireRole('user')], component: RouteState },
+  {
+    path: 'subscriptions', title: 'Subscriptions', canActivate: [requireRole('user')],
+    loadComponent: () => import('./subscriptions/subscriptions-page/subscriptions-page').then((module) => module.SubscriptionsPage),
+  },
   { path: 'admin/feeds', title: 'RSS feeds', canActivate: [requireRole('admin')], component: RouteState },
   { path: 'admin/deliveries', title: 'Deliveries', canActivate: [requireRole('admin')], component: RouteState },
   { path: 'access-denied', title: 'Access denied', component: RouteState },

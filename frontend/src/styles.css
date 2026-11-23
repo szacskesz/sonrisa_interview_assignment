@@ -59,6 +59,24 @@ input, select { width: 100%; min-width: 0; border: 1px solid #aeb9c7; border-rad
 .sign-in { width: min(100%, 364px); margin: 14px auto 5px; padding: 20px; border: 1px solid #dce1e7; border-radius: 8px; }
 .sign-in form { margin-top: 13px; }
 .sign-in .primary { width: 100%; margin-top: 3px; }
+.notice { margin-bottom: 14px; }
+.actions { gap: 5px; }
+.actions button { padding: 4px 7px; font-size: .81rem; }
+.table-frame { border: 1px solid #dce1e7; border-radius: 7px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; font-size: .88rem; }
+th { padding: 9px 12px; color: #394455; background: #f3f5f8; font-weight: 650; }
+th:first-child { border-radius: 7px 0 0 0; }
+th:last-child { border-radius: 0 7px 0 0; }
+td { padding: 11px 12px; border-top: 1px solid #e1e5ea; vertical-align: top; overflow-wrap: anywhere; }
+td small { display: block; margin-top: 3px; line-height: 1.4; }
+.subscriptions-table col:nth-child(1), .subscriptions-table col:nth-child(4) { width: 28%; }
+.badge { display: inline-block; padding: 2px 7px; background: #eef1f5; border: 1px solid #ccd5df; border-radius: 5px; font-size: .8rem; white-space: nowrap; }
+.badge.good { color: #245645; background: #eaf4ee; border-color: #c1dbcc; }
+dialog { width: min(470px, calc(100vw - 24px)); padding: 21px; border: 1px solid #aeb9c7; border-radius: 9px; color: inherit; }
+dialog::backdrop { background: #1d293860; }
+dialog h2 { margin-bottom: 7px; }
+dialog form { margin-top: 12px; }
+.form-actions { justify-content: flex-end; margin-top: 12px; }
 
 @media (max-width: 1128px) {
   .app-frame { margin: 24px; }
@@ -69,4 +87,11 @@ input, select { width: 100%; min-width: 0; border: 1px solid #aeb9c7; border-rad
   .app-header { padding: 8px 12px; }
   .app-content { padding: 17px 12px 23px; }
   .sign-in { padding: 16px; }
+  colgroup { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  tr + tr { border-top: 1px solid #c5ced9; }
+  tr { padding: 6px 0; }
+  td { display: grid; grid-template-columns: minmax(85px, .7fr) minmax(0, 1.3fr); gap: 7px; border: 0; padding: 5px 9px; }
+  td::before { content: attr(data-label); font-weight: 650; color: #394455; }
 }

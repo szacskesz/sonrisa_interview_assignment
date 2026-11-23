@@ -21,4 +21,6 @@ The admin deliveries client reads recent jobs with typed status and attempt summ
 
 The sign-in page uses Signal Forms. The shell shows navigation for the current account role, and route guards look up the current account before opening a protected page. A protected API response with HTTP 401 returns the user to sign-in and explains the expired session.
 
+The subscriptions page shows the provisioned email, topic, current status, and activation time in UTC. Add and edit use a topic dialog. Pause and resume apply immediately, and removal asks for confirmation. Existing subscriptions remain visible when no feed offers their topic.
+
 Angular and its CLI are pinned to 22.3.0. On Windows x64, pnpm reports a peer warning in an optional WebAssembly fallback from Angular's build tooling. The native dev server, production build, and unit tests ran successfully on Node 24.22.1. [Angular version compatibility](https://angular.dev/reference/versions)
