@@ -68,3 +68,11 @@ Result: [Phase 1 World Event Alerts Design](P1-task-04-alerts-feature-design.md)
 ```
 
 Decision: use SMTP and Slack HTTPS for alerts and HTTP for the app. Plan an RSS adapter as the first live news integration, with a saved or synthetic feed for tests. Compare Atom, publisher and aggregator APIs, and HTTP push in the [updated design](P1-task-04-alerts-feature-design.md#news-feed-integration).
+
+## Phase 1 Shared RSS polling
+
+```text
+"The Node service will poll each approved feed once for all subscribers" its not really scalable. the RSS url-s should be provided by the admin, so whe shouldnt poll it for every user, just once for the whole application. ALso need to store some last poll time to decide which are  the new news. Make the polling interval admin configurable as well.
+```
+
+Decision: admins manage feed URLs and per-feed intervals. The application polls each due URL centrally and saves its schedule, last attempt, last successful poll, and item checkpoint. The [news feed design](P1-task-04-alerts-feature-design.md#news-feed-integration) explains how the worker handles late items and failed polls.
